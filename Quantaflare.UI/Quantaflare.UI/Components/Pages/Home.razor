@@ -1,0 +1,54 @@
+﻿@page "/"
+
+@using Quantaflare.Data
+@using Quantaflare.UI.Services
+@inject IUConnectServices _iConnServices;
+@inject NavigationManager navManager;
+@inject HttpClient Http;
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<MudText Typo="Typo.h6" GutterBottom="true" style="margin-left: 5%">App ConnectID</MudText>
+<MudTextField @bind-Value="TextValue" Variant="Variant.Outlined" Style="width: 240px;"></MudTextField>
+<br />
+<MudButton Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Send" style="margin-left: 5%" OnClick="Verify">Next</MudButton>
+<br />
+
+
+@code {
+    private IEnumerable<UserConnect> projConns = Enumerable.Empty<UserConnect>();
+    public string TextValue { get; set; } = String.Empty;
+    public string Text1 { get; set; } = String.Empty;
+    private UnitInfo? unitInfo ;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        //projConns = await _iConnServices.getConn();
+    }
+
+    private async void Verify()
+    {
+        Text1 = $"Sorry !! Wrong Connect ID.";
+
+        var response = await Http.PostAsJsonAsync("api/Device/RegisterDevice", TextValue);
+
+        if (response.IsSuccessStatusCode)
+        {
+            unitInfo = await response.Content.ReadFromJsonAsync<UnitInfo>();
+            navManager.NavigateTo("/energy");
+        }
+
+    }
+
+    public class UnitInfo
+    {
+        public string? UnitId { get; set; }
+        public string? UnitName { get; set; }
+    }
+}
+
+
+
+
+
+
