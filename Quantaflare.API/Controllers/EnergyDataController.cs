@@ -8,12 +8,12 @@ namespace Quantaflare.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EnergyController : ControllerBase
+    public class EnergyDataController : ControllerBase
     {
         private readonly string _connectionString;
 
 
-        public EnergyController(IConfiguration configuration)
+        public EnergyDataController(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                  ?? throw new ArgumentNullException(nameof(_connectionString), "Connection string 'DefaultConnection' not found.");

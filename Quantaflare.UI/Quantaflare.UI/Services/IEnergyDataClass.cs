@@ -2,7 +2,7 @@
 
 namespace Quantaflare.UI.Services
 {
-    public interface IEnergyClass
+    public interface IEnergyDataClass
     {
         Task<IEnumerable<EnergyData>> getEnergyData();
     }

@@ -3,10 +3,10 @@ using Quantaflare.Data;
 
 namespace Quantaflare.UI.Services
 {
-    public class EnergyClass:IEnergyClass
+    public class EnergyDataClass:IEnergyDataClass
     {
         private readonly HttpClient _httpClient;
-        public EnergyClass(HttpClient httpClient)
+        public EnergyDataClass(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
@@ -14,7 +14,7 @@ namespace Quantaflare.UI.Services
         public async Task<IEnumerable<EnergyData>> getEnergyData()
         {
 
-            var result = await _httpClient.GetJsonAsync<EnergyData[]>("api/Energy/getEnergyData");
+            var result = await _httpClient.GetJsonAsync<EnergyData[]>("api/EnergyData/getEnergyData");
 
             return result;
         }

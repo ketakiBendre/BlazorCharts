@@ -18,12 +18,18 @@ try
             client.BaseAddress = new Uri("http://localhost:5221/");
         }
         );
-    builder.Services.AddHttpClient<IEnergyClass, EnergyClass>
+    builder.Services.AddHttpClient<IEnergyDataClass, EnergyDataClass>
         (client =>
         {
             client.BaseAddress = new Uri("http://localhost:5221/");
         }
         );
+    builder.Services.AddHttpClient<IEnergyStreamClass, EnergyStreamClass>
+     (client =>
+     {
+         client.BaseAddress = new Uri("http://localhost:5221/");
+     }
+     );
     builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5221/") });
     
     builder.Services.AddDistributedMemoryCache();

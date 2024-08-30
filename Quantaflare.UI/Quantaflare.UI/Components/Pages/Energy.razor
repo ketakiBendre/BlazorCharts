@@ -1,20 +1,39 @@
 ﻿@page "/energy"
 @using Quantaflare.Data
 @using Quantaflare.UI.Services
-@inject IEnergyClass _iEnergyService;
+@inject IEnergyDataClass _iEnergyService;
+@inject IEnergyStreamClass _iEnergyStream;
 @inject IHttpContextAccessor HttpContextAccessor;
 
 <h3>Welcome to Energy Data</h3>
-<MudSelect T="Streams" Label="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Class="custom-select">
-    <MudSelectItem Value="@(new Streams("location"))" />
-    <MudSelectItem Value="@(new Streams("Battery"))" />
+
+<MudSelect T="string" Label="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="selectedStream">
+    @if (energyStreams == null)
+    {
+        <MudSelectItem Value="@("Battery")">Loading...</MudSelectItem>
+    }
+    else
+    {
+        @foreach (var eStream in energyStreams)
+        {
+            <MudSelectItem Value="@eStream.Streams">@eStream.Streams</MudSelectItem>
+        }
+    }
 </MudSelect>
-<br/>
-<MudSelect T="Field" Label="Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Class="custom-select">
-    <MudSelectItem Value="@(new Field("Lat"))" />
-    <MudSelectItem Value="@(new Field("Long"))" />
-    <MudSelectItem Value="@(new Field("RPM"))" />
+<MudSelect T="string" Label="Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="selectedField">
+    @if (energyFields == null)
+    {
+        <MudSelectItem Value="@("RPM")">Loading...</MudSelectItem>
+    }
+    else
+    {
+        @foreach (var eField in energyFields)
+        {
+            <MudSelectItem Value="@eField.Fields">@eField.Fields</MudSelectItem>
+        }
+    }
 </MudSelect>
+
 @if (showComponent)
 {
     <div>
@@ -30,6 +49,10 @@ else
 
 @code {
     private IEnumerable<EnergyData> energyData = Enumerable.Empty<EnergyData>();
+    private IEnumerable<EnergyStream> energyStreams = Enumerable.Empty<EnergyStream>();
+    private string? selectedStream;
+    private IEnumerable<EnergyStream> energyFields = Enumerable.Empty<EnergyStream>();
+    private string? selectedField;
     public string[] xAxisLabels_arr = { "e" };
     public static List<double> home = new List<double>();
     public static List<double> pw = new List<double>();
@@ -37,13 +60,16 @@ else
     public List<ChartSeries> Series;
     public bool showComponent = false;
 
-    
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
 
         energyData = await _iEnergyService.getEnergyData();
+        energyStreams = await _iEnergyStream.getEnergyStream();
+
+        energyFields = await _iEnergyStream.getEnergyField();
 
         if (energyData.Any())
         {
@@ -76,50 +102,7 @@ else
         public string? UnitName { get; set; }
     }
 
-    public class Streams
-    {
-        public Streams(string name)
-        {
-            Name = name;
-        }
-
-        public readonly string Name;
-
-        // Note: this is important so the MudSelect can compare streams
-       /* public override bool Equals(object o)
-        {
-            var other = o as Streams;
-            return other?.Name == Name;
-        }*/
-
-        // Note: this is important too!
-        public override int GetHashCode() => Name?.GetHashCode() ?? 0;
-
-        // Implement this for the Streams to display correctly in MudSelect
-        public override string ToString() => Name;
-    }
-
-    public class Field
-    {
-        public Field(string name)
-        {
-            Name = name;
-        }
-
-        public readonly string Name;
-
-        // Note: this is important so the MudSelect can compare pizzas
-        /*public override bool Equals(object o)
-        {
-            var other = o as Field;
-            return other?.Name == Name;
-        }*/
-
-        // Note: this is important too!
-        public override int GetHashCode() => Name?.GetHashCode() ?? 0;
-
-        // Implement this for the Field to display correctly in MudSelect
-        public override string ToString() => Name;
-    }
+    
+    
 }
 
