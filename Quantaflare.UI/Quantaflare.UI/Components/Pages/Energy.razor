@@ -1,13 +1,15 @@
 ﻿@page "/energy"
 @using Quantaflare.Data
 @using Quantaflare.UI.Services
+@using System.Linq;
 @inject IEnergyDataClass _iEnergyService;
 @inject IEnergyStreamClass _iEnergyStream;
 @inject IHttpContextAccessor HttpContextAccessor;
+@inject HttpClient Http;
 
 <h3>Welcome to Energy Data</h3>
 
-<MudSelect T="string" Label="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="selectedStream">
+<MudSelect T="string" Label="Select Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="selectedStream">
     @if (energyStreams == null)
     {
         <MudSelectItem Value="@("Battery")">Loading...</MudSelectItem>
@@ -16,20 +18,22 @@
     {
         @foreach (var eStream in energyStreams)
         {
-            <MudSelectItem Value="@eStream.Streams">@eStream.Streams</MudSelectItem>
+            <MudSelectItem T="string" Value="@eStream.Streams">@eStream.Streams</MudSelectItem>
         }
     }
 </MudSelect>
-<MudSelect T="string" Label="Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="selectedField">
+<MudSelect T="string" Label="Select Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Disabled="@(string.IsNullOrEmpty(selectedStream))">
     @if (energyFields == null)
     {
         <MudSelectItem Value="@("RPM")">Loading...</MudSelectItem>
     }
     else
     {
-        @foreach (var eField in energyFields)
-        {
-            <MudSelectItem Value="@eField.Fields">@eField.Fields</MudSelectItem>
+        @if(energyFields.Any(h => h.Streams == selectedStream)){
+            @foreach(var eField in energyFields.Where(e => e.Streams == selectedStream))
+            {
+                <MudSelectItem T="string" Value="@eField.Fields">@eField.Fields</MudSelectItem>
+            }
         }
     }
 </MudSelect>
@@ -39,6 +43,7 @@
     <div>
         <MudChart ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@xAxisLabels_arr" Width="100%" Height="350px" />
     </div>
+
 }
 else
 {
@@ -52,13 +57,14 @@ else
     private IEnumerable<EnergyStream> energyStreams = Enumerable.Empty<EnergyStream>();
     private string? selectedStream;
     private IEnumerable<EnergyStream> energyFields = Enumerable.Empty<EnergyStream>();
-    private string? selectedField;
+    private List<EnergyStream> selectedField;
     public string[] xAxisLabels_arr = { "e" };
     public static List<double> home = new List<double>();
     public static List<double> pw = new List<double>();
     public static List<double> solar = new List<double>();
     public List<ChartSeries> Series;
     public bool showComponent = false;
+    public bool _disabled = false;
 
 
     protected override async Task OnInitializedAsync()
@@ -68,7 +74,6 @@ else
 
         energyData = await _iEnergyService.getEnergyData();
         energyStreams = await _iEnergyStream.getEnergyStream();
-
         energyFields = await _iEnergyStream.getEnergyField();
 
         if (energyData.Any())
@@ -102,7 +107,6 @@ else
         public string? UnitName { get; set; }
     }
 
-    
     
 }
 

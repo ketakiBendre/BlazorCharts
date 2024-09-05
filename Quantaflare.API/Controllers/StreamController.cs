@@ -25,7 +25,7 @@ namespace Quantaflare.API.Controllers
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                connection.Open();
+                //connection.Open();
                 var energyStream = connection.Query<EnergyStream>("SELECT distinct(streams) FROM energy");
                 return Ok(energyStream);
             }
@@ -40,13 +40,12 @@ namespace Quantaflare.API.Controllers
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                connection.Open();
-                var energyField = connection.Query<EnergyStream>("SELECT * FROM energy WHERE streams=\'Battery\'");
+                //connection.Open();
+                var energyField = connection.Query<EnergyStream>("SELECT * FROM energy");
+
                 return Ok(energyField);
             }
-
-
-
         }
+
     }
 }

@@ -30,7 +30,7 @@ namespace Quantaflare.API.Controllers
 
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                connection.Open();
+               // connection.Open();
                 var energyConnect = connection.Query<UserConnect>("SELECT * FROM energyconnect");
 
                 foreach (var user in energyConnect)
