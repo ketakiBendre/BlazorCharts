@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quantaflare.API", "Quantafl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quantaflare.Data", "Quantaflare.Data\Quantaflare.Data.csproj", "{D6FB9858-092A-4195-B7FA-9AC96A80BA73}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QFWASM.UI", "QFWASM.UI\QFWASM.UI.csproj", "{E215D69B-9ACE-40E6-9149-8B2B9FBBF64B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QFWASM.UI", "QFWASM.UI\QFWASM.UI.csproj", "{E215D69B-9ACE-40E6-9149-8B2B9FBBF64B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
