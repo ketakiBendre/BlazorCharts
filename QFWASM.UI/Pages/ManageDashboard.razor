@@ -1,0 +1,100 @@
+﻿@page "/managedash"
+@using Quantaflare.Data
+@inject HttpClient Http
+
+<style>
+    .custom-table {
+        margin-left: 5%;
+        margin-right: 5%;
+    }
+
+    .align-center {
+        display: flex;
+        align-items: center; /*Center vertically */
+    }
+
+    .new-dashboard {
+        background-color: blue;
+        color: white;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 5px;
+        padding: 5px 80px;
+        margin-left: 325%;
+    }
+
+    .table-header {
+        background-color: #9E9E9E;
+        border: 1px solid #2196F3;
+    }
+</style>
+
+<PageTitle>ManageDashboard</PageTitle>
+
+<div>
+    <MudText Style="font-weight: bold;">Manage Dashboards</MudText>
+    <br/>
+    <MudContainer>
+        <MudGrid>
+            <MudItem class="align-center">
+                <MudText>Select Clusters</MudText>
+            </MudItem>
+            <MudItem class="align-center">
+                <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                    <MudSelectItem Value="@("C1")">C1</MudSelectItem>
+                    <MudSelectItem Value="@("C2")">C2</MudSelectItem>
+                    <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</div>
+<br />
+<div>
+     <MudCard>
+         <br/>
+         <MudContainer> 
+             <MudGrid alignItems="center">
+                <MudItem class="align-center">
+                    <MudText Style="font-weight: bold;">Current Dashboards</MudText>
+                 </MudItem>
+                 <MudItem class="align-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard">New Dashboard</MudButton>
+
+                </MudItem>
+             </MudGrid>
+         </MudContainer>
+        
+        <br/>
+        <MudTable Items="@dash.Take(4)" Hover="true" Bordered="true" Class="custom-table">
+            <HeaderContent >
+                <MudTh class="table-header">DashBoard</MudTh>
+                <MudTh class="table-header">Created On</MudTh>
+                <MudTh class="table-header">           </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="DashBoard">@context.name </MudTd>
+                <MudTd DataLabel="DashBoard">@context.createdOn </MudTd>
+                <MudTd DataLabel="DashBoard">@context.action </MudTd>
+            </RowTemplate>
+        </MudTable>
+        <br/>
+     </MudCard>
+
+</div>
+
+
+@code {
+    public string ClusterValue { get; set; } = String.Empty;
+    bool fixedheader = true;
+    
+    public List<Dashboard> dash = new List<Dashboard>
+    {
+         new Dashboard{ name="Raw Stream Data", createdOn=DateTime.Now, action="edit" },
+         new Dashboard{ name="Data with Time", createdOn=DateTime.Now, action="edit" }
+    };
+    
+
+}
