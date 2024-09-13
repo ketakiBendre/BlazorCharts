@@ -19,9 +19,16 @@ namespace Quantaflare.API.Controllers
                  ?? throw new ArgumentNullException(nameof(_connectionString), "Connection string 'DefaultConnection' not found.");
         }
 
-        [HttpPost]
-        [Route("RegisterDevice")]
-        public ActionResult<UnitInfo> RegisterDevice([FromBody] string connectId)
+        [HttpOptions]
+        public IActionResult Options()
+        {
+            
+            return Ok();
+        }
+
+        [HttpPost("RegisterDevice")]
+        //[Route("RegisterDevice")]
+        public IActionResult RegisterDevice([FromBody] string connectId)
         {
             if (string.IsNullOrEmpty(connectId))
             {
@@ -32,6 +39,7 @@ namespace Quantaflare.API.Controllers
             {
                // connection.Open();
                 var energyConnect = connection.Query<UserConnect>("SELECT * FROM energyconnect");
+                Console.WriteLine(energyConnect.ToString());
 
                 foreach (var user in energyConnect)
                 {

@@ -1,13 +1,71 @@
 ﻿@page "/configuredash"
+@inject HttpClient Http
+@inject NavigationManager navManager;
 
+<style>
+    .configure-text {
+        margin-left: 5%;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .connect-text {
+        width: 240px;
+        background-color: white;
+    }
+</style>
 
 <PageTitle>Configure Dashboard</PageTitle>
 
 <div>
-    test
-    test
+    <MudContainer>
+        <MudGrid>
+            <MudItem class="align-center">
+                <MudText GutterBottom="true" Class="configure-text">App ConnectID</MudText>
+            </MudItem>
+            <MudItem class="align-center">
+                <MudTextField @bind-Value="TextValue" Variant="Variant.Outlined" Class="connect-text"></MudTextField>
+            </MudItem>
+
+        </MudGrid>
+    </MudContainer>
+    <br />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Send" style="margin-left: 20%" OnClick="Verify">Next</MudButton>
+    <br />
+    <MudText GutterBottom="true" Class="configure-text">@Text1</MudText>
 </div>
 
 @code {
+    public string TextValue { get; set; } = String.Empty;
+    private UnitInfo? unitInfo ;
+    public string Text1 = string.Empty;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    private async void Verify()
+    {
+        var response = await Http.PostAsJsonAsync("api/Device/RegisterDevice", TextValue);
+
+
+        if (response.IsSuccessStatusCode)
+        {
+            unitInfo = await response.Content.ReadFromJsonAsync<UnitInfo>();
+            
+            navManager.NavigateTo("/managedash");
+        }
+        else
+        {
+            Text1 = $"Sorry !! Wrong Connect ID.";
+        }
+
+    }
+
+     public class UnitInfo
+    {
+        public string? UnitId { get; set; }
+        public string? UnitName { get; set; }
+    }
 }
