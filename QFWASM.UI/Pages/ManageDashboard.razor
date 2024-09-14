@@ -2,88 +2,72 @@
 @using Quantaflare.Data
 @inject HttpClient Http
 
-<style>
-    .custom-table {
-        margin-left: 5%;
-        margin-right: 5%;
-    }
-
-    .align-center {
-        display: flex;
-        align-items: center; /*Center vertically */
-    }
-
-    .new-dashboard {
-        background-color: blue;
-        color: white;
-        white-space: nowrap;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 5px;
-        padding: 5px 80px;
-        margin-left: 325%;
-    }
-
-    .table-header {
-        background-color: #9E9E9E;
-        border: 1px solid #2196F3;
-    }
-</style>
-
 <PageTitle>ManageDashboard</PageTitle>
 
-<div>
-    <MudText Style="font-weight: bold;">Manage Dashboards</MudText>
-    <br/>
-    <MudContainer>
-        <MudGrid>
-            <MudItem class="align-center">
-                <MudText>Select Clusters</MudText>
-            </MudItem>
-            <MudItem class="align-center">
-                <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                    <MudSelectItem Value="@("C1")">C1</MudSelectItem>
-                    <MudSelectItem Value="@("C2")">C2</MudSelectItem>
-                    <MudSelectItem Value="@("C3")">C3</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-        </MudGrid>
-    </MudContainer>
-</div>
-<br />
-<div>
-     <MudCard>
-         <br/>
-         <MudContainer> 
-             <MudGrid alignItems="center">
-                <MudItem class="align-center">
-                    <MudText Style="font-weight: bold;">Current Dashboards</MudText>
-                 </MudItem>
-                 <MudItem class="align-center">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard">New Dashboard</MudButton>
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudGrid> <!--outermost grid -->
 
+        <MudItem md="12" sm="12" xs="12">
+            <!--main page left column-->
+
+            <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-0" Elevation="2">
+
+                <MudGrid>
+          
+                    <MudItem xs="12" sm="12" md="12">
+                            <MudStack Row = "false">
+                                <MudText Typo="Typo.h5">Manage Dashboards </MudText>
+                                <MudText Typo="Typo.subtitle1">Create custom dashboards for different clusters </MudText>
+                            </MudStack>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="12" md="12">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText>Select Clusters</MudText>
+                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                <MudSelectItem Value="@("C1")">C1</MudSelectItem>
+                                <MudSelectItem Value="@("C2")">C2</MudSelectItem>
+                                <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                            </MudSelect>
+                        </MudStack>
+                                                
+                    </MudItem>
+
+                    
+                   
+
+                    <MudItem xs="8" sm="8" md="8">
+                        <MudText Style="font-weight: bold;">Current Dashboards</MudText>
+                    </MudItem>
+                    <MudItem xs="4" sm="4" md="4">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard">New Dashboard</MudButton>
+                    </MudItem>
+
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTable Items="@dash.Take(4)" Hover="true" Bordered="true" Class="custom-table">
+                        <HeaderContent>
+                            <MudTh class="table-header">DashBoard</MudTh>
+                            <MudTh class="table-header">Created On</MudTh>
+                            <MudTh class="table-header">           </MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="DashBoard">@context.name </MudTd>
+                            <MudTd DataLabel="DashBoard">@context.createdOn </MudTd>
+                            <MudTd DataLabel="DashBoard">@context.action </MudTd>
+                        </RowTemplate>
+                    </MudTable>
                 </MudItem>
-             </MudGrid>
-         </MudContainer>
-        
-        <br/>
-        <MudTable Items="@dash.Take(4)" Hover="true" Bordered="true" Class="custom-table">
-            <HeaderContent >
-                <MudTh class="table-header">DashBoard</MudTh>
-                <MudTh class="table-header">Created On</MudTh>
-                <MudTh class="table-header">           </MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="DashBoard">@context.name </MudTd>
-                <MudTd DataLabel="DashBoard">@context.createdOn </MudTd>
-                <MudTd DataLabel="DashBoard">@context.action </MudTd>
-            </RowTemplate>
-        </MudTable>
-        <br/>
-     </MudCard>
 
-</div>
+                </MudGrid>
+
+            </MudPaper>
+        </MudItem>
+        
+    </MudGrid>
+
+</MudContainer> 
+
+
 
 
 @code {
