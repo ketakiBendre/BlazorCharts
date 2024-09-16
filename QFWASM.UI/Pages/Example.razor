@@ -1,0 +1,30 @@
+﻿@page "/example"
+@using MudBlazor
+
+<style>
+    .align-center {
+        display: flex;
+        align-items: center; /*Center vertically */
+        
+    }
+</style>
+
+<MudContainer>
+    <MudGrid>
+        <MudItem class="align-center">
+            <MudText>Label:</MudText>
+        </MudItem>
+        <MudItem>
+            <MudSelect T="string" Label="Select Option">
+                <MudSelectItem Value="@("C1")">Option 1</MudSelectItem>
+                <MudSelectItem Value="@("C2")">Option 2</MudSelectItem>
+                <MudSelectItem Value="@("C3")">Option 3</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" style="display: flex; justify-content: flex-end;">
+            <MudButton Variant="Variant.Filled">Right Aligned Button</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+
