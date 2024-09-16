@@ -1,6 +1,7 @@
 ﻿@page "/managedash"
 @using Quantaflare.Data
 @inject HttpClient Http
+@inject NavigationManager navManager;
 
 <PageTitle>ManageDashboard</PageTitle>
 
@@ -40,7 +41,7 @@
                         <MudText Style="font-weight: bold;">Current Dashboards</MudText>
                     </MudItem>
                     <MudItem xs="4" sm="4" md="4">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard">New Dashboard</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard" OnClick="newDash">New Dashboard</MudButton>
                     </MudItem>
 
                 <MudItem xs="12" sm="12" md="12">
@@ -73,12 +74,15 @@
 @code {
     public string ClusterValue { get; set; } = String.Empty;
     bool fixedheader = true;
-    
+
     public List<Dashboard> dash = new List<Dashboard>
     {
          new Dashboard{ name="Raw Stream Data", createdOn=DateTime.Now, action="edit" },
          new Dashboard{ name="Data with Time", createdOn=DateTime.Now, action="edit" }
     };
-    
 
+    private void newDash()
+    {
+        navManager.NavigateTo("/newDashboard");
+    }
 }

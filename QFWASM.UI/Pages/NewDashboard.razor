@@ -1,0 +1,34 @@
+﻿@page "/newDashboard"
+<PageTitle>New Unit Dashboard</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <MudItem md="12" sm="12" xs="12">
+            <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-0" Elevation="2">
+                <MudGrid>
+                     <MudItem xs="12" sm="12" md="12">
+                            <MudStack Row = "false">
+                                <MudText Typo="Typo.h5">New Unit Dashboard</MudText>
+                            </MudStack>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="12" md="12">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText>Name</MudText>
+                            <MudTextField @bind-Value="TextValue" Label="Name" Variant="Variant.Outlined" Style="margin-right: 60%;"></MudTextField>
+                            <MudRadioGroup @bind-Value="Dense_Radio" Style="margin-right: 40%;">
+                                <MudRadio Value="true" Color="Color.Primary" Dense="true">Unit Dashboard</MudRadio>
+                                <MudRadio Value="false" Color="Color.Secondary" Dense="false">Cluster Dashboard</MudRadio>
+                            </MudRadioGroup>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    public string TextValue { get; set; } = string.Empty;
+    public bool Dense_Radio { get; set; } = true;
+}
