@@ -1,23 +1,6 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
 
-
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
-
-    @* Required *@
+@* Required *@
 <MudThemeProvider />
 <MudPopoverProvider />
 
@@ -26,3 +9,38 @@
 
 @* Needed for snackbars *@
 <MudSnackbarProvider />
+
+<MudLayout>
+
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h4">QuantaFlare Custom Dashboard POC </MudText>
+    </MudAppBar>
+
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <div class="mt-4">
+            <NavMenu />
+        </div>
+   
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+            
+                @Body
+            
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code
+{
+    bool _drawerOpen = true;
+    private bool _isDarkMode = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+}
