@@ -12,44 +12,38 @@
                             </MudStack>
                     </MudItem>
 
-                    <MudItem xs="6" sm="3" md="3">
+                    <MudItem xs="12" sm="12" md="12">
                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                            <MudText>Name</MudText>
                             <MudTextField @bind-Value="TextValue" Label="Name" Variant="Variant.Outlined"></MudTextField>
-                        </MudStack>
-                    </MudItem>
-
-                    <MudItem xs="6" sm="4" md="4">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudText>Type: </MudText>
-                        <MudRadioGroup @bind-Value="Dense_Radio">
-                            <MudRadio Value="true" Color="Color.Primary" Dense="true">Unit Dashboard</MudRadio>
-                            <MudRadio Value="false" Color="Color.Secondary" Dense="false">Cluster Dashboard</MudRadio>
+                            <MudRadioGroup @bind-Value="Dense_Radio">
+                                <MudRadio Value="true" Color="Color.Primary" Dense="true">Unit Dashboard</MudRadio>
+                                <MudRadio Value="false" Color="Color.Secondary" Dense="false">Cluster Dashboard</MudRadio>
                         </MudRadioGroup>
                         </MudStack>
                     </MudItem>
                 </MudGrid>
-                <br/>
+
                 <MudGrid>
-                    <MudItem xs="6" sm="4" md="4">
-                        <MudText>Select a Widget </MudText>
+                    <MudItem xs="6" sm="6" md="6" Class="mt-5 ">
+                        <MudText Class="mb-5">Select a Widget to be added to dashboard </MudText>
                         <MudIconButton Target="_blank"
                                    Variant="Variant.Filled"
                                    Icon="@Icons.Material.Filled.BarChart"
-                                       Color="Color.Primary" OnClick="BarChartPaper"/>
+                                       Color="Color.Primary" OnClick="BarChartPaper" Class="big-icon-button mr-5" />
+
                         <MudIconButton Target="_blank"
-                                   Variant="Variant.Text"
+                                   Variant="Variant.Outlined"
                                    Icon="@Icons.Material.Filled.MultilineChart"
-                                       Color="Color.Primary" aria-label="LineChart"/>
+                                       Color="Color.Primary" aria-label="LineChart" Class="big-icon-button mr-5" />
                             
                         <MudIconButton Target="_blank"
                                    Variant="Variant.Outlined"
                                    Icon="@Icons.Material.Filled.PieChart"
-                                       Color="Color.Primary" aria-label= "PieChart"/>
+                                       Color="Color.Primary" aria-label="PieChart" Class="big-icon-button mr-5" />
                         <MudIconButton Target="_blank"
                                        Variant="Variant.Outlined"
                                        Icon="@Icons.Material.Filled.TableChart"
-                                       Color="Color.Primary" aria-label= "TimeSeriesTable"/>
+                                       Color="Color.Primary" aria-label="TimeSeriesTable" Class="big-icon-button mr-5" />
                     </MudItem>
 
                     
@@ -60,22 +54,19 @@
                         @if (showBarPaper)
                         {
                             <MudPaper Elevation="4" Style="margin-top: 20px; padding: 20px;">
-                                <MudText>Add Bar Chart </MudText>
+                                <MudText>Adding Bar Chart.. </MudText>
                                 <MudItem xs="6" sm="8" md="8">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                        <MudText>Title</MudText>
-                                        <MudTextField @bind-Value="BmsValue" Label="BMS Chart" Variant="Variant.Outlined"></MudTextField>
+                                        <MudTextField @bind-Value="BmsValue" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
                                     </MudStack>
                                     <MudItem xs="12" sm="12" md="12">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                            <MudText>Stream</MudText>
-                                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                            <MudSelect T="string" Label ="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
                                                 <MudSelectItem Value="@("C1")">C1</MudSelectItem>
                                                 <MudSelectItem Value="@("C2")">C2</MudSelectItem>
                                                 <MudSelectItem Value="@("C3")">C3</MudSelectItem>
                                             </MudSelect>
-                                            <MudText>Field</MudText>
-                                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                            <MudSelect T="string" Label="Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
                                                 <MudSelectItem Value="@("C1")">C1</MudSelectItem>
                                                 <MudSelectItem Value="@("C2")">C2</MudSelectItem>
                                                 <MudSelectItem Value="@("C3")">C3</MudSelectItem>
@@ -86,11 +77,11 @@
                                     <br/>
                                      <MudItem xs="6" sm="12" md="12">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                            <MudText>Agreegator</MudText>
-                                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                                                <MudSelectItem Value="@("C1")">C1</MudSelectItem>
-                                                <MudSelectItem Value="@("C2")">C2</MudSelectItem>
-                                                <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                                            <MudSelect T="string" Label ="Agreegator" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                                <MudSelectItem Value="@("C1")">Avg</MudSelectItem>
+                                                <MudSelectItem Value="@("C2")">Count</MudSelectItem>
+                                                <MudSelectItem Value="@("C3")">Max</MudSelectItem>
+                                                <MudSelectItem Value="@("C4")">Min</MudSelectItem>
                                             </MudSelect>
                                             <MudIconButton Icon="@Icons.Material.Filled.Add" aria-label="add" />
                                             <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" />
@@ -114,6 +105,15 @@
         </MudItem>
     </MudGrid>
 </MudContainer>
+
+
+<style>
+    .big-icon-button {
+        font-size: 48px; /* Adjust size as needed */
+        width: 80px; /* Custom width */
+        height: 80px; /* Custom height */
+    }
+</style>
 
 @code {
     public string TextValue { get; set; } = string.Empty;
