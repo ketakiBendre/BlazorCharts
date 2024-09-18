@@ -12,15 +12,102 @@
                             </MudStack>
                     </MudItem>
 
-                    <MudItem xs="12" sm="12" md="12">
+                    <MudItem xs="6" sm="3" md="3">
                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                             <MudText>Name</MudText>
-                            <MudTextField @bind-Value="TextValue" Label="Name" Variant="Variant.Outlined" Style="margin-right: 60%;"></MudTextField>
-                            <MudRadioGroup @bind-Value="Dense_Radio" Style="margin-right: 40%;">
-                                <MudRadio Value="true" Color="Color.Primary" Dense="true">Unit Dashboard</MudRadio>
-                                <MudRadio Value="false" Color="Color.Secondary" Dense="false">Cluster Dashboard</MudRadio>
-                            </MudRadioGroup>
+                            <MudTextField @bind-Value="TextValue" Label="Name" Variant="Variant.Outlined"></MudTextField>
                         </MudStack>
+                    </MudItem>
+
+                    <MudItem xs="6" sm="4" md="4">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText>Type: </MudText>
+                        <MudRadioGroup @bind-Value="Dense_Radio">
+                            <MudRadio Value="true" Color="Color.Primary" Dense="true">Unit Dashboard</MudRadio>
+                            <MudRadio Value="false" Color="Color.Secondary" Dense="false">Cluster Dashboard</MudRadio>
+                        </MudRadioGroup>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+                <br/>
+                <MudGrid>
+                    <MudItem xs="6" sm="4" md="4">
+                        <MudText>Select a Widget </MudText>
+                        <MudIconButton Target="_blank"
+                                   Variant="Variant.Filled"
+                                   Icon="@Icons.Material.Filled.BarChart"
+                                       Color="Color.Primary" OnClick="BarChartPaper"/>
+                        <MudIconButton Target="_blank"
+                                   Variant="Variant.Text"
+                                   Icon="@Icons.Material.Filled.MultilineChart"
+                                       Color="Color.Primary" aria-label="LineChart"/>
+                            
+                        <MudIconButton Target="_blank"
+                                   Variant="Variant.Outlined"
+                                   Icon="@Icons.Material.Filled.PieChart"
+                                       Color="Color.Primary" aria-label= "PieChart"/>
+                        <MudIconButton Target="_blank"
+                                       Variant="Variant.Outlined"
+                                       Icon="@Icons.Material.Filled.TableChart"
+                                       Color="Color.Primary" aria-label= "TimeSeriesTable"/>
+                    </MudItem>
+
+                    
+                </MudGrid>
+
+                <MudGrid>
+                    <MudItem>
+                        @if (showBarPaper)
+                        {
+                            <MudPaper Elevation="4" Style="margin-top: 20px; padding: 20px;">
+                                <MudText>Add Bar Chart </MudText>
+                                <MudItem xs="6" sm="8" md="8">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                        <MudText>Title</MudText>
+                                        <MudTextField @bind-Value="BmsValue" Label="BMS Chart" Variant="Variant.Outlined"></MudTextField>
+                                    </MudStack>
+                                    <MudItem xs="12" sm="12" md="12">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                            <MudText>Stream</MudText>
+                                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                                <MudSelectItem Value="@("C1")">C1</MudSelectItem>
+                                                <MudSelectItem Value="@("C2")">C2</MudSelectItem>
+                                                <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                                            </MudSelect>
+                                            <MudText>Field</MudText>
+                                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                                <MudSelectItem Value="@("C1")">C1</MudSelectItem>
+                                                <MudSelectItem Value="@("C2")">C2</MudSelectItem>
+                                                <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                                            </MudSelect>
+                                        </MudStack>
+
+                                    </MudItem>
+                                    <br/>
+                                     <MudItem xs="6" sm="12" md="12">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                            <MudText>Agreegator</MudText>
+                                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                                <MudSelectItem Value="@("C1")">C1</MudSelectItem>
+                                                <MudSelectItem Value="@("C2")">C2</MudSelectItem>
+                                                <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                                            </MudSelect>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Add" aria-label="add" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" />
+                                        </MudStack>
+                                     </MudItem>
+                                    
+                                </MudItem>
+                                
+                            </MudPaper>
+                            <MudItem xs="12" class="d-flex justify-content-end">
+                                <MudIconButton Target="_blank"
+                                           Variant="Variant.Outlined"
+                                           Icon="@Icons.Material.Filled.Save"
+                                           Color="Color.Primary" aria-label="save" />
+                            </MudItem>
+                          
+                        }
                     </MudItem>
                 </MudGrid>
             </MudPaper>
@@ -31,4 +118,17 @@
 @code {
     public string TextValue { get; set; } = string.Empty;
     public bool Dense_Radio { get; set; } = true;
+    public string BmsValue { get; set; } = string.Empty;
+
+    private bool showBarPaper = false;
+
+    private void BarChartPaper()
+    {
+        showBarPaper = !showBarPaper; // Toggle the visibility of MudPaper
+    }
+
+    private void remove()
+    {
+        
+    }
 }

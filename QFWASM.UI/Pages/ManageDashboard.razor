@@ -22,45 +22,51 @@
                             </MudStack>
                     </MudItem>
 
-                    <MudItem xs="12" sm="12" md="12">
+                    <MudItem xs="12" sm="4" md="4">
                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                             <MudText>Select Clusters</MudText>
-                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                                <MudSelectItem Value="@("C1")">C1</MudSelectItem>
-                                <MudSelectItem Value="@("C2")">C2</MudSelectItem>
-                                <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                            <MudSelect T="string" Value="SelectedCluster" Variant="Variant.Outlined" ValueChanged="OnSelectingCluster" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                @foreach (var cluster in clusters)
+                                {
+                                    <MudSelectItem Value="@cluster.ClusterName">@cluster.ClusterName</MudSelectItem>
+                                }
                             </MudSelect>
-                        </MudStack>
-                                                
+                        </MudStack>         
                     </MudItem>
-
-                    
-                   
-
-                    <MudItem xs="8" sm="8" md="8">
-                        <MudText Style="font-weight: bold;">Current Dashboards</MudText>
-                    </MudItem>
-                    <MudItem xs="4" sm="4" md="4">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard" OnClick="newDash">New Dashboard</MudButton>
-                    </MudItem>
-
-                <MudItem xs="12" sm="12" md="12">
-                    <MudTable Items="@dash.Take(4)" Hover="true" Bordered="true" Class="custom-table">
-                        <HeaderContent>
-                            <MudTh class="table-header">DashBoard</MudTh>
-                            <MudTh class="table-header">Created On</MudTh>
-                            <MudTh class="table-header">           </MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="DashBoard">@context.name </MudTd>
-                            <MudTd DataLabel="DashBoard">@context.createdOn </MudTd>
-                            <MudTd DataLabel="DashBoard">@context.action </MudTd>
-                        </RowTemplate>
-                    </MudTable>
-                </MudItem>
-
                 </MudGrid>
 
+                @if (!string.IsNullOrEmpty(SelectedCluster))
+                {
+                    <MudPaper Elevation="4" class="p-4 mt-4">
+                        <!--new dashboard Grid-->
+                    <MudGrid>
+                        <MudItem xs="8" sm="8" md="8">
+                                <MudText Style="font-weight: bold;">Current Dashboards</MudText>
+                        </MudItem>
+                        <MudItem class="d-flex justify-content-end">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard" OnClick="newDash">New Dashboard</MudButton>
+                        </MudItem>
+                    </MudGrid>
+
+                        <!-- Data Grid to display Dashboards -->
+                    <div class="mt-6;">
+                        <MudDataGrid Items="@dashB.Take(4)" Class="custom-width">
+                        <Columns>
+                            <PropertyColumn Property="x => x.dashName" Title="Dashboard Name"/>
+                            <PropertyColumn Property="x => x.createdOn" Title="Created On" />
+                                <TemplateColumn CellClass="d-flex justify-end">
+                                    <CellTemplate>
+                                        <MudStack Row>
+                                        <MudButton EndIcon="@Icons.Material.Filled.Edit" Variant="@Variant.Filled" Color="@Color.Primary"></MudButton>
+                                        </MudStack>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                        </Columns>
+
+                    </MudDataGrid>
+                    </div>
+                </MudPaper>
+                }
             </MudPaper>
         </MudItem>
         
@@ -74,12 +80,36 @@
 @code {
     public string ClusterValue { get; set; } = String.Empty;
     bool fixedheader = true;
+    private string? SelectedCluster;
+    private IEnumerable<Cluster> clusters = Enumerable.Empty<Cluster>();
+    private IEnumerable<Dashboard> dash = Enumerable.Empty<Dashboard>();
+    private int? clusterid;
 
-    public List<Dashboard> dash = new List<Dashboard>
+
+    protected override async Task OnInitializedAsync()
     {
-         new Dashboard{ name="Raw Stream Data", createdOn=DateTime.Now, action="edit" },
-         new Dashboard{ name="Data with Time", createdOn=DateTime.Now, action="edit" }
-    };
+        var cl = await Http.GetFromJsonAsync<Cluster[]>("api/Dashboard/getCluster");
+        if (cl!=null)
+        {
+            clusters = cl;
+        }
+        var dBoard = await Http.GetFromJsonAsync<Dashboard[]>("api/Dashboard/getDashboard");
+        if (dBoard != null)
+        {
+            dash = dBoard;
+        }
+    }
+
+    private IEnumerable<Dashboard> dashB => string.IsNullOrEmpty(SelectedCluster) ? dash : dash.Where(d => d.clusterId == clusterid);
+    private void OnSelectingCluster(string name)
+    {
+        SelectedCluster = name;
+        var cluster = clusters.FirstOrDefault(e => e.ClusterName == name);
+        if(cluster != null)
+        {
+            clusterid = cluster.ClusterId;
+        }
+    }
 
     private void newDash()
     {

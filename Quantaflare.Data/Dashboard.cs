@@ -8,8 +8,13 @@ namespace Quantaflare.Data
 {
     public class Dashboard
     {
-        public string name { get; set; } = string.Empty;
+        public int? clusterId { get; set; }
         public DateTime createdOn;
-        public string action { get; set; } = string.Empty;
+        public int? dashbaordId { get; set; }
+        public string dashName { get; set; } = string.Empty;
+
+        public string dashType { get; set; }= string.Empty;
+
+
     }
 }
