@@ -7,14 +7,21 @@
         <strong>@Title</strong>
     </TitleContent>
     <DialogContent>
-         <MudItem xs="6" sm="4" md="4">
-        <MudTextField @bind-Value="BmsValue" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
-        </MudItem>
+        
          <MudContainer Class="mt-4">
+
              <MudGrid>
+                <MudItem xs="6" sm="12" md="12">
+                    <MudText Typo="Typo.h5" Color="Color.Primary">Adding a Line chart</MudText>
+                </MudItem>
+
+                <MudItem xs="6" sm="12" md="12">
+                    <MudTextField @bind-Value="BmsValue" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
+                </MudItem>
+
                 <MudItem xs="6" sm="6" md="6" Class="mb-4">
                     <MudCard>
-                                <MudCardContent>
+                             <MudCardContent>
                                 <MudItem xs="12" sm="10" md="10">
                                     <MudStack Row="true" Justify="Justify.SpaceBetween">
                                         <MudSelect T="string" @bind-Value="selectedStream" Label="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
@@ -40,18 +47,18 @@
                                 <MudButton Disabled="!IsAddButtonEnabled" OnClick="AddItem" Color="Color.Primary">Add</MudButton>
                             </MudCardActions>
                         </MudCard>
-    </MudItem>
+                </MudItem>
     
-    <MudItem xs="12" sm="6" md="6">
-        <MudCard>
-            <MudCardHeader>
-                <MudText>Widget Preview of this Selection</MudText>
-            </MudCardHeader>
-            <MudCardContent>
-                <MudText>Display Chart</MudText>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
+                <MudItem xs="12" sm="6" md="6">
+                    <MudCard>
+                        <MudCardHeader>
+                            <MudText>Widget Preview of this Selection</MudText>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText>Display Chart</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
                 @if (eStreamList.Count > 0)
                 {
                     <MudItem xs="12" sm="6" md="6"> 
@@ -76,6 +83,7 @@
                 }
             </MudGrid>
          </MudContainer> 
+
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Save" Variant="Variant.Outlined" Color="Color.Primary">Save</MudButton>
