@@ -1,4 +1,8 @@
 ﻿@page "/newDashboard"
+@inject IDialogService DialogService
+
+
+
 <PageTitle>New Unit Dashboard</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.False">
@@ -10,6 +14,7 @@
                             <MudStack Row = "false">
                                 <MudText Typo="Typo.h5">New Unit Dashboard</MudText>
                             </MudStack>
+
                     </MudItem>
 
                     <MudItem xs="12" sm="12" md="12">
@@ -27,14 +32,14 @@
                     <MudItem xs="6" sm="6" md="6" Class="mt-5 ">
                         <MudText Class="mb-5">Select a Widget to be added to dashboard </MudText>
                         <MudIconButton Target="_blank"
+                                       Variant="Variant.Outlined"
+                                       Icon="@Icons.Material.Filled.MultilineChart"
+                                       Color="Color.Primary" OnClick="LineChartPaper" Class="big-icon-button mr-5" />
+
+                        <MudIconButton Target="_blank"
                                    Variant="Variant.Filled"
                                    Icon="@Icons.Material.Filled.BarChart"
                                        Color="Color.Primary" OnClick="BarChartPaper" Class="big-icon-button mr-5" />
-
-                        <MudIconButton Target="_blank"
-                                   Variant="Variant.Outlined"
-                                   Icon="@Icons.Material.Filled.MultilineChart"
-                                       Color="Color.Primary" aria-label="LineChart" Class="big-icon-button mr-5" />
                             
                         <MudIconButton Target="_blank"
                                    Variant="Variant.Outlined"
@@ -44,61 +49,6 @@
                                        Variant="Variant.Outlined"
                                        Icon="@Icons.Material.Filled.TableChart"
                                        Color="Color.Primary" aria-label="TimeSeriesTable" Class="big-icon-button mr-5" />
-                    </MudItem>
-
-                    
-                </MudGrid>
-
-                <MudGrid>
-                    <MudItem>
-                        @if (showBarPaper)
-                        {
-                            <MudPaper Elevation="4" Style="margin-top: 20px; padding: 20px;">
-                                <MudText>Adding Bar Chart.. </MudText>
-                                <MudItem xs="6" sm="8" md="8">
-                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                        <MudTextField @bind-Value="BmsValue" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
-                                    </MudStack>
-                                    <MudItem xs="12" sm="12" md="12">
-                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                            <MudSelect T="string" Label ="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                                                <MudSelectItem Value="@("C1")">C1</MudSelectItem>
-                                                <MudSelectItem Value="@("C2")">C2</MudSelectItem>
-                                                <MudSelectItem Value="@("C3")">C3</MudSelectItem>
-                                            </MudSelect>
-                                            <MudSelect T="string" Label="Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                                                <MudSelectItem Value="@("C1")">C1</MudSelectItem>
-                                                <MudSelectItem Value="@("C2")">C2</MudSelectItem>
-                                                <MudSelectItem Value="@("C3")">C3</MudSelectItem>
-                                            </MudSelect>
-                                        </MudStack>
-
-                                    </MudItem>
-                                    <br/>
-                                     <MudItem xs="6" sm="12" md="12">
-                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                            <MudSelect T="string" Label ="Agreegator" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                                                <MudSelectItem Value="@("C1")">Avg</MudSelectItem>
-                                                <MudSelectItem Value="@("C2")">Count</MudSelectItem>
-                                                <MudSelectItem Value="@("C3")">Max</MudSelectItem>
-                                                <MudSelectItem Value="@("C4")">Min</MudSelectItem>
-                                            </MudSelect>
-                                            <MudIconButton Icon="@Icons.Material.Filled.Add" aria-label="add" />
-                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" />
-                                        </MudStack>
-                                     </MudItem>
-                                    
-                                </MudItem>
-                                
-                            </MudPaper>
-                            <MudItem xs="12" class="d-flex justify-content-end">
-                                <MudIconButton Target="_blank"
-                                           Variant="Variant.Outlined"
-                                           Icon="@Icons.Material.Filled.Save"
-                                           Color="Color.Primary" aria-label="save" />
-                            </MudItem>
-                          
-                        }
                     </MudItem>
                 </MudGrid>
             </MudPaper>
@@ -118,17 +68,29 @@
 @code {
     public string TextValue { get; set; } = string.Empty;
     public bool Dense_Radio { get; set; } = true;
-    public string BmsValue { get; set; } = string.Empty;
+    private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
 
     private bool showBarPaper = false;
 
-    private void BarChartPaper()
+    private  Task LineChartPaper()
     {
-        showBarPaper = !showBarPaper; // Toggle the visibility of MudPaper
+        var parameters = new DialogParameters()
+        {
+            { "Title", "Add Line Chart" }
+        };
+        return DialogService.ShowAsync<Components.LineChartComponent>("Custom Options Dialog", _maxWidth);
+
     }
 
-    private void remove()
+    private Task BarChartPaper()
     {
-        
+        var parameters = new DialogParameters()
+        {
+            { "Title", "Add Bar Chart" }
+        };
+
+        return DialogService.ShowAsync<Components.BarChartComponent>("Custom Options Dialog", _maxWidth);
+
     }
+    
 }

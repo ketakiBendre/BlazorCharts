@@ -1,0 +1,124 @@
+﻿@using MudBlazor
+@using Quantaflare.Data
+
+
+<MudDialog>
+    <TitleContent>
+        <strong>@Title</strong>
+    </TitleContent>
+    <DialogContent>
+         <MudItem xs="6" sm="4" md="4">
+        <MudTextField @bind-Value="BmsValue" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
+        </MudItem>
+         <MudContainer Class="mt-4">
+             <MudGrid>
+                <MudItem xs="6" sm="6" md="6" Class="mb-4">
+                    <MudCard>
+                                <MudCardContent>
+                                <MudItem xs="12" sm="10" md="10">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudSelect T="string" @bind-Value="selectedStream" Label="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                            <MudSelectItem Value="@("C1")">C1</MudSelectItem>
+                                            <MudSelectItem Value="@("C2")">C2</MudSelectItem>
+                                            <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                                        </MudSelect>
+                                        <MudSelect T="string" @bind-Value="selectedField" Label="Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                            <MudSelectItem Value="@("C1")">C1</MudSelectItem>
+                                            <MudSelectItem Value="@("C2")">C2</MudSelectItem>
+                                            <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                                        </MudSelect>
+                                        <MudSelect T="string" @bind-Value="selectedAgr" Label="Agreegator" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                            <MudSelectItem Value="@("Avg")">Avg</MudSelectItem>
+                                            <MudSelectItem Value="@("Count")">Count</MudSelectItem>
+                                            <MudSelectItem Value="@("Max")">Max</MudSelectItem>
+                                            <MudSelectItem Value="@("Min")">Min</MudSelectItem>
+                                        </MudSelect>
+                                    </MudStack>
+                                </MudItem>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Disabled="!IsAddButtonEnabled" OnClick="AddItem" Color="Color.Primary">Add</MudButton>
+                            </MudCardActions>
+                        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" sm="6" md="6">
+        <MudCard>
+            <MudCardHeader>
+                <MudText>Widget Preview of this Selection</MudText>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText>Display Chart</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+                @if (eStreamList.Count > 0)
+                {
+                    <MudItem xs="12" sm="6" md="6"> 
+                        <div class="mt-6;">
+                            <MudDataGrid Items="@eStreamList.Take(4)" Class="custom-width">
+                                <Columns>
+                                    <PropertyColumn Property="x => x.Streams" Title="Stream"/>
+                                    <PropertyColumn Property="x => x.Fields" Title="Field" />
+                                    <PropertyColumn Property="x => x.agr" Title="Agreegator" />
+                                    <TemplateColumn CellClass="d-flex justify-end">
+                                        <CellTemplate>
+                                            <MudStack Row>
+                                                <MudButton EndIcon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteStream(context.Item))"></MudButton>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+
+                            </MudDataGrid>
+                        </div>
+                    </MudItem>
+                }
+            </MudGrid>
+         </MudContainer> 
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Save" Variant="Variant.Outlined" Color="Color.Primary">Save</MudButton>
+        <MudButton OnClick="Close" Variant="Variant.Outlined" Color="Color.Primary">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] 
+    public MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+    public string BmsValue { get; set; } = string.Empty;
+
+    private string selectedStream;
+    private string selectedField;
+    private string selectedAgr;
+    private List<EnergyStream> eStreamList = new List<EnergyStream>();
+
+    private List<string> items = new List<string>();
+    private bool IsAddButtonEnabled => selectedStream != null && selectedField != null && selectedAgr != null;
+
+    private void AddItem()
+    {
+        EnergyStream eStream = new EnergyStream();
+
+        eStream.Streams = selectedStream;
+        eStream.Fields = selectedField;
+        eStream.agr = selectedAgr;
+
+        eStreamList.Add(eStream);
+        /*Clear Selection*/
+        selectedStream = selectedField = selectedAgr = null;
+    }
+
+    private void DeleteStream(EnergyStream DeleteEStream)
+    {
+        eStreamList.Remove(DeleteEStream);
+    }
+
+    private void Close() => MudDialog.Close();
+    private void Save()
+    {
+        MudDialog.Close(DialogResult.Ok(true)); 
+    }
+}

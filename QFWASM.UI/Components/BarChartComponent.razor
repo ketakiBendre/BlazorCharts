@@ -1,0 +1,16 @@
+﻿@using MudBlazor
+@using Quantaflare.Data
+
+
+<MudDialog>
+    <TitleContent>
+        <strong>@Title</strong>
+    </TitleContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+}

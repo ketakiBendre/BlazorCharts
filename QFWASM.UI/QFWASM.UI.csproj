@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -14,6 +14,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quantaflare.Data\Quantaflare.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Components\LineChartComponent.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
   </ItemGroup>
 
 </Project>
