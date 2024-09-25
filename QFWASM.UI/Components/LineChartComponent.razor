@@ -1,5 +1,6 @@
 ﻿@using MudBlazor
 @using Quantaflare.Data
+@inject ISnackbar Snackbar
 
 
 <MudDialog>
@@ -16,7 +17,7 @@
                 </MudItem>
 
                 <MudItem xs="6" sm="12" md="12">
-                    <MudTextField @bind-Value="BmsValue" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
+                    <MudTextField @bind-Value="ChartTitle" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
                 </MudItem>
 
                 <MudItem xs="6" sm="6" md="6" Class="mb-4">
@@ -96,7 +97,7 @@
     public MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public string Title { get; set; } = string.Empty;
-    public string BmsValue { get; set; } = string.Empty;
+    public string ChartTitle { get; set; } = string.Empty;
 
     private string selectedStream;
     private string selectedField;
@@ -114,9 +115,16 @@
         eStream.Fields = selectedField;
         eStream.agr = selectedAgr;
 
-        eStreamList.Add(eStream);
-        /*Clear Selection*/
-        selectedStream = selectedField = selectedAgr = null;
+        if (!eStreamList.Any(p => p.Equals(eStream)))
+        {
+            eStreamList.Add(eStream);
+            /*Clear Selection*/
+            selectedStream = selectedField = selectedAgr = null;
+        }
+        else
+        {
+            ShowAlert("Please Select Different variation than existing in Grid !!", Defaults.Classes.Position.BottomRight);
+        }
     }
 
     private void DeleteStream(EnergyStream DeleteEStream)
@@ -125,8 +133,23 @@
     }
 
     private void Close() => MudDialog.Close();
+
     private void Save()
     {
-        MudDialog.Close(DialogResult.Ok(true)); 
+        if (string.IsNullOrEmpty(ChartTitle))
+        {
+            ShowAlert("Please Enter Chart Title to Save Dashboard !!", Defaults.Classes.Position.BottomRight);
+        }
+        else
+        {
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+    }
+
+    void ShowAlert(string message, string position)
+    {
+        Snackbar.Clear();
+        Snackbar.Configuration.PositionClass = position;
+        Snackbar.Add(message, Severity.Error, c => c.SnackbarVariant = Variant.Outlined);
     }
 }
