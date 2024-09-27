@@ -30,9 +30,6 @@ namespace Quantaflare.API.Controllers
                 var energyStream = connection.Query<EnergyStream>("SELECT * FROM streams");
                 return Ok(energyStream);
             }
-
-
-
         }
 
         [HttpGet]
@@ -83,6 +80,19 @@ namespace Quantaflare.API.Controllers
                 var energyField = connection.Query<EnergyStream>("SELECT * FROM energy");
 
                 return Ok(energyField);
+            }
+        }
+
+        [HttpGet]
+        [Route("getChartInfo")]
+        public IActionResult getChartInfo()
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                //connection.Open();
+                var sql = @"SELECT time, avg(voltage) as voltage FROM chartinfo group by time order by time asc";
+                var chartInfo = connection.Query<ChartInfo>(sql);
+                return Ok(chartInfo);
             }
         }
 

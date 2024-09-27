@@ -76,6 +76,13 @@
                         </MudCardHeader>
                         <MudCardContent>
                             <MudText>Display Chart</MudText>
+                            @if (showComponent)
+                            {
+                                <div>
+                                    <MudChart ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@xAxisLabels_arr" Width="100%" Height="350px" />
+                                </div>
+
+                            }
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -129,7 +136,15 @@
     private List<EnergyStream> loadStreamField = new List<EnergyStream>();
     private List<Streams> loadStreams = new List<Streams>();
 
-    private List<string> items = new List<string>();
+    private IEnumerable<ChartInfo> chartData = Enumerable.Empty<ChartInfo>();
+    public static List<double> voltage = new List<double>();
+    public static List<double> current = new List<double>();
+    public static List<double> soc = new List<double>();
+    public string[] xAxisLabels_arr = { "e" };
+    public List<ChartSeries> Series;
+    public bool showComponent = false;
+
+    
     private bool IsAddButtonEnabled => selectedStream != null && selectedField != null && selectedAgr != null;
 
     protected override async Task OnInitializedAsync()
@@ -150,6 +165,36 @@
         {
             loadStreamField = streamFields.ToList();
         }
+
+        var chartDataList = await Http.GetFromJsonAsync<ChartInfo[]>("api/Stream/getChartInfo");
+        if (chartDataList != null)
+        {
+            chartData = chartDataList.ToList();
+        }
+
+        if (chartData.Any())
+        {
+            voltage.Clear();
+            current.Clear();
+            soc.Clear();
+            List<string> xAxisLabels = new List<string>();
+            foreach (var data in chartData)
+            {
+                xAxisLabels.Add(data.time);
+                voltage.Add(data.voltage);
+                //current.Add(data.current);
+                //soc.Add(data.soc);
+            }
+            xAxisLabels_arr = xAxisLabels.ToArray();
+        }
+
+        Series = new List<ChartSeries>()
+        {
+            new ChartSeries() { Name = "Voltage", Data = voltage.ToArray() },
+            //new ChartSeries() { Name = "Current", Data = current.ToArray() },
+            //new ChartSeries() { Name = "Soc", Data = soc.ToArray() },
+        };
+        
     }
 
     private void AddItem()
@@ -163,6 +208,7 @@
         if (!eStreamList.Any(p => p.Equals(eStream)))
         {
             eStreamList.Add(eStream);
+            showComponent = true;
             /*Clear Selection*/
             selectedStream = selectedField = selectedAgr = null;
         }
