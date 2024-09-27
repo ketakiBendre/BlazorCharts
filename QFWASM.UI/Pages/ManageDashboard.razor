@@ -43,9 +43,9 @@
                         <MudItem xs="8" sm="8" md="8">
                                 <MudText Style="font-weight: bold;">Current Dashboards</MudText>
                         </MudItem>
-                        <MudItem class="d-flex justify-content-end">
-                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard" OnClick="newDash">New Dashboard</MudButton>
-                        </MudItem>
+                            <MudItem class="d-flex justify-content-end">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard" OnClick="newDash">New Dashboard</MudButton>
+                            </MudItem>
                     </MudGrid>
 
                         <!-- Data Grid to display Dashboards -->
@@ -83,7 +83,7 @@
     private string? SelectedCluster;
     private IEnumerable<Cluster> clusters = Enumerable.Empty<Cluster>();
     private IEnumerable<Dashboard> dash = Enumerable.Empty<Dashboard>();
-    private int? clusterid;
+    private int clusterid=1;
 
 
     protected override async Task OnInitializedAsync()
@@ -113,6 +113,6 @@
 
     private void newDash()
     {
-        navManager.NavigateTo("/newDashboard");
+        navManager.NavigateTo($"/newDashboard?clusterid={clusterid}");
     }
 }

@@ -1,7 +1,7 @@
 ﻿@using MudBlazor
 @using Quantaflare.Data
 @inject ISnackbar Snackbar
-
+@inject HttpClient Http
 
 <MudDialog>
     <TitleContent>
@@ -13,7 +13,7 @@
 
              <MudGrid>
                 <MudItem xs="6" sm="12" md="12">
-                    <MudText Typo="Typo.h5" Color="Color.Primary">Adding a Line chart</MudText>
+                    <MudText Typo="Typo.h5" Color="Color.Primary">Adding a Line chart @clusterid</MudText>
                 </MudItem>
 
                 <MudItem xs="6" sm="12" md="12">
@@ -26,14 +26,33 @@
                                 <MudItem xs="12" sm="10" md="10">
                                     <MudStack Row="true" Justify="Justify.SpaceBetween">
                                         <MudSelect T="string" @bind-Value="selectedStream" Label="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                                            <MudSelectItem Value="@("C1")">C1</MudSelectItem>
-                                            <MudSelectItem Value="@("C2")">C2</MudSelectItem>
-                                            <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                                        @if (loadStreamField == null)
+                                        {
+                                            <MudSelectItem Value="@("Battery")">Loading...</MudSelectItem>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var lStream in loadStreams)
+                                            {
+                                                <MudSelectItem T="string" Value="@lStream.StreamName">@lStream.StreamName</MudSelectItem>
+                                            }
+                                        }
                                         </MudSelect>
                                         <MudSelect T="string" @bind-Value="selectedField" Label="Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                                            <MudSelectItem Value="@("C1")">C1</MudSelectItem>
-                                            <MudSelectItem Value="@("C2")">C2</MudSelectItem>
-                                            <MudSelectItem Value="@("C3")">C3</MudSelectItem>
+                                            @if (loadStreamField == null)
+                                            {
+                                                <MudSelectItem Value="@("RPM")">Loading...</MudSelectItem>
+                                            }
+                                            else
+                                            {
+                                                @if (loadStreamField.Any(h => h.Streams == selectedStream))
+                                                {
+                                                    @foreach (var eField in loadStreamField.Where(e => e.Streams == selectedStream))
+                                                    {
+                                                        <MudSelectItem T="string" Value="@eField.Fields">@eField.Fields</MudSelectItem>
+                                                    }
+                                                }
+                                            }
                                         </MudSelect>
                                         <MudSelect T="string" @bind-Value="selectedAgr" Label="Agreegator" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
                                             <MudSelectItem Value="@("Avg")">Avg</MudSelectItem>
@@ -97,15 +116,41 @@
     public MudDialogInstance MudDialog { get; set; }
     [Parameter]
     public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string clusterid { get; set; } = string.Empty;
+
     public string ChartTitle { get; set; } = string.Empty;
 
     private string selectedStream;
     private string selectedField;
     private string selectedAgr;
     private List<EnergyStream> eStreamList = new List<EnergyStream>();
+    private List<EnergyStream> loadStreamField = new List<EnergyStream>();
+    private List<Streams> loadStreams = new List<Streams>();
 
     private List<string> items = new List<string>();
     private bool IsAddButtonEnabled => selectedStream != null && selectedField != null && selectedAgr != null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        int id = int.Parse(clusterid);
+
+         var url = $"api/Stream/getStreams?inputId={id}";
+        var lStreams = await Http.GetFromJsonAsync<Streams[]>(url);
+        if (lStreams != null)
+        {
+            loadStreams = lStreams.ToList();
+        }
+
+        var url_field = $"api/Stream/getStreamAndField?inputId={id}";
+        var streamFields = await Http.GetFromJsonAsync<EnergyStream[]>(url_field);
+        if (streamFields != null)
+        {
+            loadStreamField = streamFields.ToList();
+        }
+    }
 
     private void AddItem()
     {

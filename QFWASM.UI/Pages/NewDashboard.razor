@@ -1,6 +1,6 @@
 ﻿@page "/newDashboard"
 @inject IDialogService DialogService
-
+@inject NavigationManager NavigationManager
 
 
 <PageTitle>New Unit Dashboard</PageTitle>
@@ -12,7 +12,7 @@
                 <MudGrid>
                      <MudItem xs="12" sm="12" md="12">
                             <MudStack Row = "false">
-                                <MudText Typo="Typo.h5">New Unit Dashboard</MudText>
+                                <MudText Typo="Typo.h5">New Unit Dashboard @clusterid</MudText>
                             </MudStack>
 
                     </MudItem>
@@ -66,19 +66,38 @@
 </style>
 
 @code {
+    [Parameter]
+    public string? clusterid { get; set; } = string.Empty;
+
     public string TextValue { get; set; } = string.Empty;
     public bool Dense_Radio { get; set; } = true;
     private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
 
     private bool showBarPaper = false;
 
+    protected override void OnInitialized()
+    {
+        // Get the URI of the current request
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        // Parse the query parameters
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        clusterid = query["clusterid"]; // Retrieve the value of 'clusterid'
+
+        // Log to console for debugging
+        Console.WriteLine($"Received Cluster ID: {clusterid}");
+    }
+
+   
+
     private  Task LineChartPaper()
     {
         var parameters = new DialogParameters()
         {
-            { "Title", "Add Line Chart" }
+            { "Title", "Add Line Chart" },
+            {"ClusterId", clusterid}
         };
-        return DialogService.ShowAsync<Components.LineChartComponent>("Custom Options Dialog", _maxWidth);
+        return DialogService.ShowAsync<Components.LineChartComponent>("Custom Options Dialog", parameters, _maxWidth);
 
     }
 
