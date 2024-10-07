@@ -2,6 +2,7 @@
 @using Quantaflare.Data
 @inject ISnackbar Snackbar
 @inject HttpClient Http
+@using System.Text.Json;
 
 <MudDialog>
     <TitleContent>
@@ -94,7 +95,7 @@
                 </MudItem>
     
                 <MudItem xs="12" sm="6" md="6">
-                    <MudCard >
+                    <MudCard Class="mb-4">
                         <MudCardHeader>
                             <MudText Typo="Typo.h6" Color="Color.Primary">Preview</MudText>
                         </MudCardHeader>
@@ -103,7 +104,22 @@
                             @if (showComponent)
                             {
                                 <div>
-                                    <MudChart ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@xAxisLabels_arr" Width="100%" Height="350px" />
+                                    <MudChart ChartType="ChartType.Line"
+                                              ChartSeries="@series"
+                                              @bind-SelectedIndex="Index"
+                                              XAxisLabels="@xAxisLabels"
+                                              Width="100%"
+                                              Height="350px"
+                                              ChartOptions="@options" />
+
+                                    <MudGrid>
+                                        <MudItem xs="6">
+                                            <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : series[Index].Name)</MudText>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
+                                        </MudItem>
+                                    </MudGrid>
                                 </div>
 
                             }
@@ -144,15 +160,17 @@
     private List<EnergyStream> loadStreamField = new List<EnergyStream>();
     private List<Streams> loadStreams = new List<Streams>();
 
-    private IEnumerable<ChartInfo> chartData = Enumerable.Empty<ChartInfo>();
-    public static List<double> voltage = new List<double>();
-    public static List<double> current = new List<double>();
-    public static List<double> soc = new List<double>();
-    public string[] xAxisLabels_arr = { "e" };
-    public List<ChartSeries> Series;
+    private IEnumerable<ChartData> chartInfo = Enumerable.Empty<ChartData>();
+
+
     public bool showComponent = false;
 
-    
+    private List<ChartDataResult> chartDataList;
+    private int Index { get; set; } = -1; // Default selected index
+    private string[] xAxisLabels = new string[0];
+    private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
+    private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
+
     private bool IsAddButtonEnabled => selectedStream != null && selectedField != null && selectedAgr != null;
 
     protected override async Task OnInitializedAsync()
@@ -160,7 +178,7 @@
         await base.OnInitializedAsync();
         int id = int.Parse(clusterid);
 
-         var url = $"api/Stream/getStreams?inputId={id}";
+        var url = $"api/Stream/getStreams?inputId={id}";
         var lStreams = await Http.GetFromJsonAsync<Streams[]>(url);
         if (lStreams != null)
         {
@@ -173,39 +191,9 @@
         {
             loadStreamField = streamFields.ToList();
         }
-
-        var chartDataList = await Http.GetFromJsonAsync<ChartInfo[]>("api/Stream/getChartInfo");
-        if (chartDataList != null)
-        {
-            chartData = chartDataList.ToList();
-        }
-
-        if (chartData.Any())
-        {
-            voltage.Clear();
-            current.Clear();
-            soc.Clear();
-            List<string> xAxisLabels = new List<string>();
-            foreach (var data in chartData)
-            {
-                xAxisLabels.Add(data.time);
-                voltage.Add(data.voltage);
-                //current.Add(data.current);
-                //soc.Add(data.soc);
-            }
-            xAxisLabels_arr = xAxisLabels.ToArray();
-        }
-
-        Series = new List<ChartSeries>()
-        {
-            new ChartSeries() { Name = "Voltage", Data = voltage.ToArray() },
-            //new ChartSeries() { Name = "Current", Data = current.ToArray() },
-            //new ChartSeries() { Name = "Soc", Data = soc.ToArray() },
-        };
-        
     }
 
-    private void AddItem()
+    private async Task AddItem()
     {
         EnergyStream eStream = new EnergyStream();
 
@@ -216,7 +204,50 @@
         if (!eStreamList.Any(p => p.Equals(eStream)))
         {
             eStreamList.Add(eStream);
+
+
+            /*Display chart*/
+            //var url_chart = @"api/Stream/getChartInfo?eStreamList={eStreamList}";
+            var response = await Http.PostAsJsonAsync("api/Stream/getChartInfo", eStreamList);
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                var resultList = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>();
+
+                chartDataList = resultList.Select(dict => new ChartDataResult
+                    {
+                        recordtime = DateTimeOffset.Parse(dict["recordtime"].ToString()),
+                        result = JsonSerializer.Deserialize<Dictionary<string, double>>(dict["result"].ToString())
+                    }).ToList();
+                // Extract unique keys for the chart
+
+               
+                xAxisLabels = chartDataList.Select(data => data.recordtime.ToString()).ToArray();
+             
+
+                // Prepare Series with Data Points
+                var seriesKeys = chartDataList.SelectMany(data => data.result.Select(x => x.Key)).Distinct().ToList();
+                foreach (var key in seriesKeys)
+                {
+                    var seriesData = new MudBlazor.ChartSeries
+                        {
+                            Name = key,
+
+                            Data = chartDataList.SelectMany(data => data.result.Select(x => x.Value)).ToArray()
+
+                        };
+                    if (!series.Any(s => s.Name == seriesData.Name))
+                    {
+                        series.Add(seriesData);
+                    }
+                }
+
+            }
+           
             showComponent = true;
+
+
             /*Clear Selection*/
             selectedStream = selectedField = selectedAgr = null;
         }
@@ -241,7 +272,10 @@
         }
         else
         {
-            MudDialog.Close(DialogResult.Ok(true));
+            ChartData cData = new ChartData();
+           // cData.ChartTitle = ChartTitle;
+            //cData.EnergyStream = eStreamList;
+            MudDialog.Close(DialogResult.Ok(cData));
         }
     }
 
@@ -250,5 +284,22 @@
         Snackbar.Clear();
         Snackbar.Configuration.PositionClass = position;
         Snackbar.Add(message, Severity.Error, c => c.SnackbarVariant = Variant.Outlined);
+    }
+
+    public class ChartDataResult
+    {
+        public DateTimeOffset recordtime { get; set; }
+        public Dictionary<string, double> result { get; set; }
+    }
+
+    public class ChartOptions
+    {
+        public double LineStrokeWidth { get; set; } = 2; // Default value
+    }
+
+    public class ChartSeries
+    {
+        public string Name { get; set; }
+        public double[] Data { get; set; }
     }
 }

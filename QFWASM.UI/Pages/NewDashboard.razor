@@ -1,6 +1,7 @@
 ﻿@page "/newDashboard"
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
+@using Quantaflare.Data
 
 
 <PageTitle>New Unit Dashboard</PageTitle>
@@ -53,6 +54,14 @@
                 </MudGrid>
             </MudPaper>
         </MudItem>
+        @if (showLineChart)
+        {
+            <MudItem xs="6" sm="6" md="6">
+                <MudPaper>
+                    <MudText>@ReturnedLineChart.charttitle</MudText>
+                </MudPaper>
+            </MudItem>
+        }
     </MudGrid>
 </MudContainer>
 
@@ -73,7 +82,9 @@
     public bool Dense_Radio { get; set; } = true;
     private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
 
-    private bool showBarPaper = false;
+    private bool showLineChart = false;
+
+    private ChartData ReturnedLineChart = new ChartData();
 
     protected override void OnInitialized()
     {
@@ -88,17 +99,24 @@
         Console.WriteLine($"Received Cluster ID: {clusterid}");
     }
 
-   
 
-    private  Task LineChartPaper()
+
+    private async Task LineChartPaper()
     {
         var parameters = new DialogParameters()
         {
             { "Title", "Add Line Chart" },
             {"ClusterId", clusterid}
         };
-        return DialogService.ShowAsync<Components.LineChartComponent>("Custom Options Dialog", parameters, _maxWidth);
+        var dialog=DialogService.Show<Components.LineChartComponent>("Custom Options Dialog", parameters, _maxWidth);
 
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            ReturnedLineChart = (ChartData) result.Data;
+            showLineChart = true;
+        }
     }
 
     private Task BarChartPaper()

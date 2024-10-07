@@ -8,7 +8,7 @@ namespace Quantaflare.Data
 {
     public class ChartInfo
     {
-        public string time { get; set; } = string.Empty;
-        public double voltage { get; set; }
+        public DateTimeOffset time{ get; set; } 
+        public double avgcurrent { get; set; }
     }
 }
