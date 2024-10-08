@@ -194,7 +194,7 @@ namespace Quantaflare.API.Controllers
             var chartInfo = await getChartInfoByAgr(eStreamList);
             return Ok(chartInfo);
         }
-        private async Task<IEnumerable<ChartInfo>> getChartInfoByAgr(List<EnergyStream> eStreamList)
+        private async Task<IEnumerable<ChartDataResult>> getChartInfoByAgr(List<EnergyStream> eStreamList)
         {
             string GroupByFields = "skv.timestamp";
             var aggregateQuery = new StringBuilder();
@@ -226,7 +226,7 @@ namespace Quantaflare.API.Controllers
                 sql_query.Append($" GROUP BY {GroupByFields} ORDER BY {GroupByFields}");
                 sql.Append(sql_query);
                 Console.WriteLine($"Received Cluster ID: {sql}");
-                var chartInfo = await connection.QueryAsync<ChartInfo>(sql.ToString());
+                var chartInfo = await connection.QueryAsync<ChartDataResult>(sql.ToString());
                 return chartInfo;
             }
         }

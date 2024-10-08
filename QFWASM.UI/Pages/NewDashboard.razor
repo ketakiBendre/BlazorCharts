@@ -2,6 +2,7 @@
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @using Quantaflare.Data
+@inject Services.MyChartService myChartService
 
 
 <PageTitle>New Unit Dashboard</PageTitle>
@@ -58,7 +59,25 @@
         {
             <MudItem xs="6" sm="6" md="6">
                 <MudPaper>
-                    <MudText>@ReturnedLineChart.charttitle</MudText>
+                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@ReturnedLineChart.charttitle</MudText>
+                    <div>
+                        <MudChart ChartType="ChartType.Line"
+                                  ChartSeries="@series"
+                                  @bind-SelectedIndex="Index"
+                                  XAxisLabels="@xAxisLabels"
+                                  Width="100%"
+                                  Height="350px"
+                                  ChartOptions="@options" />
+
+                        <MudGrid>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : series[Index].Name)</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
                 </MudPaper>
             </MudItem>
         }
@@ -83,6 +102,10 @@
     private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
 
     private bool showLineChart = false;
+    private int Index { get; set; } = -1; // Default selected index
+    private string[] xAxisLabels = new string[0];
+    private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
+    private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
 
     private ChartData ReturnedLineChart = new ChartData();
 
@@ -115,6 +138,7 @@
         if (result != null && !result.Canceled)
         {
             ReturnedLineChart = (ChartData) result.Data;
+            (xAxisLabels, series) = await myChartService.GetChartInfo(ReturnedLineChart.EnergyStream);
             showLineChart = true;
         }
     }

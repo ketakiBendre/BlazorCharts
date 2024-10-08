@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Quantaflare.Data
 {
-    public class ChartInfo
+    public class ChartDataResult
     {
-        public DateTimeOffset time{ get; set; } 
-        public double avgcurrent { get; set; }
+        public DateTimeOffset recordtime{ get; set; }
+        public Dictionary<string, double> result { get; set; }
     }
 }

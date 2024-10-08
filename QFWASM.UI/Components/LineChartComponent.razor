@@ -3,6 +3,7 @@
 @inject ISnackbar Snackbar
 @inject HttpClient Http
 @using System.Text.Json;
+@inject Services.MyChartService myChartService
 
 <MudDialog>
     <TitleContent>
@@ -159,10 +160,6 @@
     private List<EnergyStream> eStreamList = new List<EnergyStream>();
     private List<EnergyStream> loadStreamField = new List<EnergyStream>();
     private List<Streams> loadStreams = new List<Streams>();
-
-    private IEnumerable<ChartData> chartInfo = Enumerable.Empty<ChartData>();
-
-
     public bool showComponent = false;
 
     private List<ChartDataResult> chartDataList;
@@ -207,44 +204,7 @@
 
 
             /*Display chart*/
-            //var url_chart = @"api/Stream/getChartInfo?eStreamList={eStreamList}";
-            var response = await Http.PostAsJsonAsync("api/Stream/getChartInfo", eStreamList);
-            if (response.IsSuccessStatusCode)
-            {
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-
-                var resultList = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>();
-
-                chartDataList = resultList.Select(dict => new ChartDataResult
-                    {
-                        recordtime = DateTimeOffset.Parse(dict["recordtime"].ToString()),
-                        result = JsonSerializer.Deserialize<Dictionary<string, double>>(dict["result"].ToString())
-                    }).ToList();
-                // Extract unique keys for the chart
-
-               
-                xAxisLabels = chartDataList.Select(data => data.recordtime.ToString()).ToArray();
-             
-
-                // Prepare Series with Data Points
-                var seriesKeys = chartDataList.SelectMany(data => data.result.Select(x => x.Key)).Distinct().ToList();
-                foreach (var key in seriesKeys)
-                {
-                    var seriesData = new MudBlazor.ChartSeries
-                        {
-                            Name = key,
-
-                            Data = chartDataList.SelectMany(data => data.result.Select(x => x.Value)).ToArray()
-
-                        };
-                    if (!series.Any(s => s.Name == seriesData.Name))
-                    {
-                        series.Add(seriesData);
-                    }
-                }
-
-            }
-           
+            (xAxisLabels, series) = await myChartService.GetChartInfo(eStreamList);
             showComponent = true;
 
 
@@ -273,8 +233,8 @@
         else
         {
             ChartData cData = new ChartData();
-           // cData.ChartTitle = ChartTitle;
-            //cData.EnergyStream = eStreamList;
+            cData.charttitle = ChartTitle;
+            cData.EnergyStream = eStreamList;
             MudDialog.Close(DialogResult.Ok(cData));
         }
     }
@@ -286,20 +246,9 @@
         Snackbar.Add(message, Severity.Error, c => c.SnackbarVariant = Variant.Outlined);
     }
 
-    public class ChartDataResult
-    {
-        public DateTimeOffset recordtime { get; set; }
-        public Dictionary<string, double> result { get; set; }
-    }
-
+    
     public class ChartOptions
     {
         public double LineStrokeWidth { get; set; } = 2; // Default value
-    }
-
-    public class ChartSeries
-    {
-        public string Name { get; set; }
-        public double[] Data { get; set; }
     }
 }
