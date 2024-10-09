@@ -50,7 +50,7 @@
 
                         <!-- Data Grid to display Dashboards -->
                     <div class="mt-6;">
-                        <MudDataGrid Items="@dashB.Take(4)" Class="custom-width">
+                        <MudDataGrid Items="@dashB.Take(10)" Class="custom-width">
                         <Columns>
                             <PropertyColumn Property="x => x.dashName" Title="Dashboard Name"/>
                             <PropertyColumn Property="x => x.createdOn" Title="Created On" />
@@ -82,7 +82,7 @@
     bool fixedheader = true;
     private string? SelectedCluster;
     private IEnumerable<Cluster> clusters = Enumerable.Empty<Cluster>();
-    private IEnumerable<Dashboard> dash = Enumerable.Empty<Dashboard>();
+    private IEnumerable<Dashboard> dashB = Enumerable.Empty<Dashboard>();
     private int clusterid=1;
 
 
@@ -93,21 +93,20 @@
         {
             clusters = cl;
         }
-        var dBoard = await Http.GetFromJsonAsync<Dashboard[]>("api/Dashboard/getDashboard");
-        if (dBoard != null)
-        {
-            dash = dBoard;
-        }
     }
 
-    private IEnumerable<Dashboard> dashB => string.IsNullOrEmpty(SelectedCluster) ? dash : dash.Where(d => d.clusterId == clusterid);
-    private void OnSelectingCluster(string name)
+    private async Task OnSelectingCluster(string name)
     {
         SelectedCluster = name;
         var cluster = clusters.FirstOrDefault(e => e.ClusterName == name);
         if(cluster != null)
         {
-            clusterid = cluster.ClusterId;
+            var url = $"api/Dashboard/getDashboard?inputId={cluster.ClusterId}";
+            var dBoard = await Http.GetFromJsonAsync<Dashboard[]>(url);
+            if (dBoard != null)
+            {
+                dashB = dBoard;
+            }
         }
     }
 

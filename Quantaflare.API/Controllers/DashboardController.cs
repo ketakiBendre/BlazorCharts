@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Quantaflare.Data;
+using System.Data;
+using System.Data.Common;
 
 namespace Quantaflare.API.Controllers
 {
@@ -35,7 +37,7 @@ namespace Quantaflare.API.Controllers
 
         }
 
-        [HttpGet]
+        /*[HttpGet]
         [Route("getDashboard")]
         public IActionResult getDashboard(int clusterId)
         {
@@ -49,19 +51,39 @@ namespace Quantaflare.API.Controllers
                     return BadRequest("No data found");
             }
         }
+        */
+        [HttpGet]
+        [Route("getDashboard")]
 
-        /* public IActionResult getDashboard(int clusterId)
+        public async Task<IActionResult> getDashboard(int inputId)
+        {
+            var streams = await getDashboardId(inputId);
+            return Ok(streams);
+        }
+
+        private async Task<IEnumerable<Dashboard>> getDashboardId(int inputId)
+        {
+            using (IDbConnection db = new NpgsqlConnection(_connectionString))
+            {
+                db.Open();
+                var result = await db.QueryAsync<Dashboard>("SELECT * FROM public.getdashboard(@inputId)", new { inputId });
+                return result; // Ensure you return the result here
+            }
+        }
+
+
+        [HttpPost]
+        [Route("PostDashboard")]
+        public IActionResult PostDashboard(Dashboard ds)
          {
              using (var connection = new NpgsqlConnection(_connectionString))
              {
                  connection.Open();
-                 var dashboard = connection.Query<Dashboard>("SELECT * FROM dashboard").Where(e => e.clusterId == clusterId).ToList();
-                 if (dashboard!= null)
-                      return Ok(dashboard);
-                 else
-                     return BadRequest("No data found");
-             }
-         }*/
+                var sql = "INSERT INTO dashboard (clusterid, createdon, dashname, dashtype) values(@clusterId, @createdOn, @dashName, @dashType)";
+                int rowsAffected = connection.Execute(sql, ds);
+                return Ok(rowsAffected);
+            }
+         }
 
         [HttpGet]
         [Route("getCluster")]

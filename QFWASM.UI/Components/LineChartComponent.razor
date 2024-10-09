@@ -138,8 +138,8 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Save" Variant="Variant.Outlined" Color="Color.Primary">Save</MudButton>
         <MudButton OnClick="Close" Variant="Variant.Outlined" Color="Color.Primary">Close</MudButton>
+        <MudButton OnClick="Save" Variant="Variant.Outlined" Color="Color.Primary">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -228,7 +228,7 @@
     {
         if (string.IsNullOrEmpty(ChartTitle))
         {
-            ShowAlert("Please Enter Chart Title to Save Dashboard !!", Defaults.Classes.Position.BottomRight);
+            ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight);
         }
         else
         {

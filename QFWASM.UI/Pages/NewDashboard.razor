@@ -3,6 +3,9 @@
 @inject NavigationManager NavigationManager
 @using Quantaflare.Data
 @inject Services.MyChartService myChartService
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+@inject NavigationManager Navigation
 
 
 <PageTitle>New Unit Dashboard</PageTitle>
@@ -51,7 +54,15 @@
                                        Variant="Variant.Outlined"
                                        Icon="@Icons.Material.Filled.TableChart"
                                        Color="Color.Primary" aria-label="TimeSeriesTable" Class="big-icon-button mr-5" />
+
                     </MudItem>
+                    
+                </MudGrid>
+                <MudGrid>
+                    <MudContainer Style="text-align: right;">
+                        <MudButton Color="Color.Primary" OnClick="Save" Variant="Variant.Outlined">Edit</MudButton>
+                        <MudButton Color="Color.Primary" OnClick="Save" Variant="Variant.Outlined">Save</MudButton>
+                    </MudContainer>
                 </MudGrid>
             </MudPaper>
         </MudItem>
@@ -152,6 +163,52 @@
 
         return DialogService.ShowAsync<Components.BarChartComponent>("Custom Options Dialog", _maxWidth);
 
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrEmpty(TextValue))
+        {
+            ShowAlert("Please Enter Dashboard name before saving !!", Defaults.Classes.Position.BottomRight);
+        }
+        else
+        {
+            Dashboard ds = new Dashboard();
+            ds.clusterId = int.Parse(clusterid);
+            ds.createdOn = DateTime.Now;
+            ds.dashName = TextValue;
+            ds.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard"; 
+            var response = await  Http.PostAsJsonAsync("api/Dashboard/PostDashboard", ds);
+            if (response.IsSuccessStatusCode)
+            {
+                int rowsAffected = await response.Content.ReadFromJsonAsync<int >();
+                if(rowsAffected > 0)
+                {
+                    Navigation.NavigateTo("/managedash");
+                    ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight);
+                }
+            }
+            
+        }
+    }
+
+    private void Edit()
+    {
+        if (string.IsNullOrEmpty(TextValue))
+        {
+            ShowAlert("Please Enter Dashboard name before saving !!", Defaults.Classes.Position.BottomRight);
+        }
+        else
+        {
+            ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight);
+        }
+    }
+
+    void ShowAlert(string message, string position)
+    {
+        Snackbar.Clear();
+        Snackbar.Configuration.PositionClass = position;
+        Snackbar.Add(message, Severity.Error, c => c.SnackbarVariant = Variant.Outlined);
     }
     
 }
