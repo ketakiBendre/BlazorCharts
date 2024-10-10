@@ -106,9 +106,9 @@
                             {
                                 <div>
                                     <MudChart ChartType="ChartType.Line"
-                                              ChartSeries="@series"
+                                              ChartSeries="@chartSeriesData.series"
                                               @bind-SelectedIndex="Index"
-                                              XAxisLabels="@xAxisLabels"
+                                              XAxisLabels="@chartSeriesData.xAxisLabels"
                                               Width="100%"
                                               Height="350px"
                                               ChartOptions="@options" />
@@ -167,6 +167,7 @@
     private string[] xAxisLabels = new string[0];
     private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
     private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
+    private ChartSeriesData chartSeriesData = new ChartSeriesData();
 
     private bool IsAddButtonEnabled => selectedStream != null && selectedField != null && selectedAgr != null;
 
@@ -204,7 +205,7 @@
 
 
             /*Display chart*/
-            (xAxisLabels, series) = await myChartService.GetChartInfo(eStreamList);
+            chartSeriesData = await myChartService.GetChartInfo(eStreamList);
             showComponent = true;
 
 

@@ -68,14 +68,16 @@
         </MudItem>
         @if (showLineChart)
         {
-            <MudItem xs="6" sm="6" md="6">
-                <MudPaper>
-                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@ReturnedLineChart.charttitle</MudText>
+            foreach (var lineChart in lineChartList)
+            {
+                <MudItem xs="6" sm="4" md="4">
+                    <MudPaper>
+                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
                     <div>
                         <MudChart ChartType="ChartType.Line"
-                                  ChartSeries="@series"
+                                  ChartSeries="@lineChart.series"
                                   @bind-SelectedIndex="Index"
-                                  XAxisLabels="@xAxisLabels"
+                                  XAxisLabels="@lineChart.xAxisLabels"
                                   Width="100%"
                                   Height="350px"
                                   ChartOptions="@options" />
@@ -90,7 +92,8 @@
                         </MudGrid>
                     </div>
                 </MudPaper>
-            </MudItem>
+              </MudItem>
+            }
         }
     </MudGrid>
 </MudContainer>
@@ -120,6 +123,8 @@
 
     private ChartData ReturnedLineChart = new ChartData();
 
+    private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
+
     protected override void OnInitialized()
     {
         // Get the URI of the current request
@@ -137,6 +142,7 @@
 
     private async Task LineChartPaper()
     {
+        
         var parameters = new DialogParameters()
         {
             { "Title", "Add Line Chart" },
@@ -149,8 +155,11 @@
         if (result.Data != null && !result.Canceled)
         {
             ReturnedLineChart = (ChartData) result.Data;
-            (xAxisLabels, series) = await myChartService.GetChartInfo(ReturnedLineChart.EnergyStream);
+            var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.EnergyStream);
+            lineSeriesData.chartTitle = ReturnedLineChart.charttitle;
+            lineChartList.Add(lineSeriesData);
             showLineChart = true;
+
         }
     }
 

@@ -11,13 +11,14 @@ namespace QFWASM.UI.Services
         private string[] xAxisLabels = new string[0];
         private List<ChartDataResult> chartDataList;
         private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
+        private ChartSeriesData chartSeriesData = new ChartSeriesData();
         public MyChartService(HttpClient httpClient)
         {
             Http = httpClient;
         }
-        public async Task<(string[], List<MudBlazor.ChartSeries> series)> GetChartInfo(List<EnergyStream> eStreamList)
+        public async Task<ChartSeriesData> GetChartInfo(List<EnergyStream> eStreamList)
         {
-
+            chartSeriesData = new ChartSeriesData();
             var response = await Http.PostAsJsonAsync("api/Stream/getChartInfo", eStreamList);
             if (response.IsSuccessStatusCode)
             {
@@ -28,9 +29,10 @@ namespace QFWASM.UI.Services
                     recordtime = DateTimeOffset.Parse(dict["recordtime"].ToString()),
                     result = JsonSerializer.Deserialize<Dictionary<string, double>>(dict["result"].ToString())
                 }).ToList();
-                xAxisLabels = chartDataList.Select(data => data.recordtime.ToString()).ToArray();
+                chartSeriesData.xAxisLabels = chartDataList.Select(data => data.recordtime.ToString()).ToArray();
 
                 // Prepare Series with Data Points
+                series = new List<MudBlazor.ChartSeries>();
                 var seriesKeys = chartDataList.SelectMany(data => data.result.Select(x => x.Key)).Distinct().ToList();
                 foreach (var key in seriesKeys)
                 {
@@ -46,8 +48,9 @@ namespace QFWASM.UI.Services
                         series.Add(seriesData);
                     }
                 }
+                chartSeriesData.series = series;
             }
-            return (xAxisLabels, series);
+            return chartSeriesData;
         }
     }
 }
