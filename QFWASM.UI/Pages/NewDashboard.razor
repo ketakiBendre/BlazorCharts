@@ -110,7 +110,7 @@
 
     public string TextValue { get; set; } = string.Empty;
     public bool Dense_Radio { get; set; } = true;
-    private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+    private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, BackdropClick = false};
 
     private bool showLineChart = false;
     private int Index { get; set; } = -1; // Default selected index
@@ -146,7 +146,7 @@
 
         var result = await dialog.Result;
 
-        if (result != null && !result.Canceled)
+        if (result.Data != null && !result.Canceled)
         {
             ReturnedLineChart = (ChartData) result.Data;
             (xAxisLabels, series) = await myChartService.GetChartInfo(ReturnedLineChart.EnergyStream);
