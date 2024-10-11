@@ -115,7 +115,7 @@
 
                                     <MudGrid>
                                         <MudItem xs="6">
-                                            <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : series[Index].Name)</MudText>
+                                            <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : chartSeriesData.series[Index].Name)</MudText>
                                         </MudItem>
                                         <MudItem xs="6">
                                             <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
@@ -163,9 +163,7 @@
     public bool showComponent = false;
 
     private List<ChartDataResult> chartDataList;
-    private int Index { get; set; } = -1; // Default selected index
-    private string[] xAxisLabels = new string[0];
-    private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
+    private int Index { get; set; } = -1; 
     private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
     private ChartSeriesData chartSeriesData = new ChartSeriesData();
 
@@ -218,9 +216,12 @@
         }
     }
 
-    private void DeleteStream(EnergyStream DeleteEStream)
+    private async Task DeleteStream(EnergyStream DeleteEStream)
     {
         eStreamList.Remove(DeleteEStream);
+        /*Display chart*/
+        chartSeriesData = myChartService.RemoveChartInfo(DeleteEStream);
+        showComponent = true;
     }
 
     private void Close() => MudDialog.Close();

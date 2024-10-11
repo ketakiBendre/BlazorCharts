@@ -2,6 +2,7 @@
 using static System.Net.WebRequestMethods;
 using System.Text.Json;
 using System.Net.Http.Json;
+using System;
 
 namespace QFWASM.UI.Services
 {
@@ -29,7 +30,7 @@ namespace QFWASM.UI.Services
                     recordtime = DateTimeOffset.Parse(dict["recordtime"].ToString()),
                     result = JsonSerializer.Deserialize<Dictionary<string, double>>(dict["result"].ToString())
                 }).ToList();
-                chartSeriesData.xAxisLabels = chartDataList.Select(data => data.recordtime.ToString()).ToArray();
+                chartSeriesData.xAxisLabels = chartDataList.Select(data => data.recordtime.ToString("hh:mm tt")).ToArray();
 
                 // Prepare Series with Data Points
                 series = new List<MudBlazor.ChartSeries>();
@@ -40,7 +41,7 @@ namespace QFWASM.UI.Services
                     {
                         Name = key,
 
-                        Data = chartDataList.SelectMany(data => data.result.Select(x => x.Value)).ToArray()
+                        Data = chartDataList.Select(data => data.result[key]).ToArray()
 
                     };
                     if (!series.Any(s => s.Name == seriesData.Name))
@@ -49,6 +50,19 @@ namespace QFWASM.UI.Services
                     }
                 }
                 chartSeriesData.series = series;
+            }
+            return chartSeriesData;
+        }
+
+        public ChartSeriesData RemoveChartInfo(EnergyStream eStream)
+        {
+            string removeKey = (eStream.Fields + "_" + eStream.agr).ToLower();
+            var seriesToRemove = chartSeriesData.series.FirstOrDefault(x => x.Name == removeKey);
+
+            // If found, remove it from the list
+            if (seriesToRemove != null)
+            {
+                chartSeriesData.series.Remove(seriesToRemove);
             }
             return chartSeriesData;
         }
