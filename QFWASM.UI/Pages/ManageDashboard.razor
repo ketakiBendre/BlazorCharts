@@ -92,14 +92,22 @@
         if (cl!=null)
         {
             clusters = cl;
+            SelectedCluster = "Cluster1";
+            await FetchDashboardsForCluster();
         }
     }
 
     private async Task OnSelectingCluster(string name)
     {
         SelectedCluster = name;
-        var cluster = clusters.FirstOrDefault(e => e.ClusterName == name);
-        if(cluster != null)
+        await FetchDashboardsForCluster();
+    }
+
+    private async Task FetchDashboardsForCluster()
+    {
+        //SelectedCluster = name;
+        var cluster = clusters.FirstOrDefault(e => e.ClusterName == SelectedCluster);
+        if (cluster != null)
         {
             var url = $"api/Dashboard/getDashboard?inputId={cluster.ClusterId}";
             var dBoard = await Http.GetFromJsonAsync<Dashboard[]>(url);

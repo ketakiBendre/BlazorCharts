@@ -42,12 +42,12 @@
                                        Color="Color.Primary" OnClick="LineChartPaper" Class="big-icon-button mr-5" />
 
                         <MudIconButton Target="_blank"
-                                   Variant="Variant.Filled"
+                                   Variant="Variant.Outlined"
                                    Icon="@Icons.Material.Filled.BarChart"
                                        Color="Color.Primary" OnClick="BarChartPaper" Class="big-icon-button mr-5" />
                             
                         <MudIconButton Target="_blank"
-                                   Variant="Variant.Outlined"
+                                       Variant="Variant.Outlined"
                                    Icon="@Icons.Material.Filled.PieChart"
                                        Color="Color.Primary" aria-label="PieChart" Class="big-icon-button mr-5" />
                         <MudIconButton Target="_blank"
@@ -60,8 +60,8 @@
                 </MudGrid>
                 <MudGrid>
                     <MudContainer Style="text-align: right;">
-                        <MudButton Color="Color.Primary" OnClick="Save" Variant="Variant.Outlined">Edit</MudButton>
-                        <MudButton Color="Color.Primary" OnClick="Save" Variant="Variant.Outlined">Save</MudButton>
+                        @* <MudButton Color="Color.Primary" OnClick="Save" Variant="Variant.Outlined">Edit</MudButton> *@
+                        <MudButton Color="Color.Primary" OnClick="Save" Variant="Variant.Filled">Save dashboard</MudButton>
                     </MudContainer>
                 </MudGrid>
             </MudPaper>
