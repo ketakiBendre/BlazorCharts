@@ -70,8 +70,15 @@
         {
             foreach (var lineChart in lineChartList)
             {
-                <MudItem xs="6" sm="4" md="4">
-                    <MudPaper>
+
+                var position = chartPositions[lineChart]; // Get the position for the current chart
+
+                <MudItem xs="2" sm="2" md="2">
+                    <MudPaper @onmousedown="(e) => OnMouseDown(e, lineChart)"
+                              @onmouseup="OnMouseUp"
+                              @onmousemove="OnMouseMove"
+                              style="@($"position: absolute; left: {position.X}px; top: {position.Y}px; cursor: move;")"
+                              Elevation="4">
                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
                     <div>
                         <MudChart ChartType="ChartType.Line"
@@ -124,6 +131,12 @@
     private ChartData ReturnedLineChart = new ChartData();
 
     private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
+    
+    private Dictionary<ChartSeriesData, ChartPosition> chartPositions = new Dictionary<ChartSeriesData, ChartPosition>();
+    private bool isDragging = false;
+    private double offsetX;
+    private double offsetY;
+    private ChartSeriesData draggingChart = new ChartSeriesData();
 
     protected override void OnInitialized()
     {
@@ -154,12 +167,14 @@
 
         if (result.Data != null && !result.Canceled)
         {
+            
             ReturnedLineChart = (ChartData) result.Data;
             var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.EnergyStream);
             lineSeriesData.chartTitle = ReturnedLineChart.charttitle;
+            chartPositions[lineSeriesData] = new ChartPosition { X = 350, Y = 350 };
             lineChartList.Add(lineSeriesData);
             showLineChart = true;
-
+            
         }
     }
 
@@ -212,6 +227,33 @@
             ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight);
         }
     }
+
+    private void OnMouseDown(MouseEventArgs e, ChartSeriesData chart)
+    {
+        isDragging = true;
+        draggingChart = chart;
+        var position = chartPositions[chart];
+        offsetX = e.ClientX - position.X;
+        offsetY = e.ClientY - position.Y;
+    }
+
+    private void OnMouseUp()
+    {
+        isDragging = false;
+        draggingChart = null; // Clear the dragging chart
+    }
+
+    private void OnMouseMove(MouseEventArgs e)
+    {
+        if (isDragging && draggingChart != null)
+        {
+            var position = chartPositions[draggingChart];
+            position.X = e.ClientX - offsetX;
+            position.Y = e.ClientY - offsetY;
+            StateHasChanged(); // Refresh the UI
+        }
+    }
+
 
     void ShowAlert(string message, string position)
     {

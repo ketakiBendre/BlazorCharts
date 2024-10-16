@@ -9,7 +9,7 @@ namespace Quantaflare.Data
     public class ChartData
     {
         public string charttitle {  get; set; }=string.Empty;
-
+        public string chartType {  get; set; }=string.Empty;
         public List<EnergyStream> EnergyStream { get; set; } = new List<EnergyStream>();
 
     }
