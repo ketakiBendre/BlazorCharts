@@ -17,10 +17,10 @@ namespace QFWASM.UI.Services
         {
             Http = httpClient;
         }
-        public async Task<ChartSeriesData> GetChartInfo(List<EnergyStream> eStreamList)
+        public async Task<ChartSeriesData> GetChartInfo(List<LineChartData> lineChartList)
         {
             chartSeriesData = new ChartSeriesData();
-            var response = await Http.PostAsJsonAsync("api/Stream/getChartInfo", eStreamList);
+            var response = await Http.PostAsJsonAsync("api/Stream/getChartInfo", lineChartList);
             if (response.IsSuccessStatusCode)
             {
                 var resultList = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>();
@@ -54,9 +54,14 @@ namespace QFWASM.UI.Services
             return chartSeriesData;
         }
 
-        public ChartSeriesData RemoveChartInfo(EnergyStream eStream)
+        public ChartSeriesData RemoveChartInfo(ChartDataStream chartStream)
         {
-            string removeKey = (eStream.Fields + "_" + eStream.agr).ToLower();
+            string removeKey = chartStream.field;
+            if (chartStream is LineChartData lineChartData)
+            {
+                removeKey = (removeKey+ "_" + lineChartData.agr).ToLower();
+            }
+            
             var seriesToRemove = chartSeriesData.series.FirstOrDefault(x => x.Name == removeKey);
 
             // If found, remove it from the list

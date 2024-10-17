@@ -87,23 +87,23 @@ namespace Quantaflare.API.Controllers
         [HttpPost]
         [Route("getChartInfo")]
 
-        public async Task<IActionResult> getChartInfo([FromBody] List<EnergyStream> eStreamList)
+        public async Task<IActionResult> getChartInfo([FromBody] List<LineChartData> lineChartList)
         {
-            var data = await GetChartInfoFunc(eStreamList);
+            var data = await GetChartInfoFunc(lineChartList);
             return Ok(data);
         }
 
-        private async Task<List<Dictionary<string, object>>> GetChartInfoFunc([FromBody] List<EnergyStream> eStreamList)
+        private async Task<List<Dictionary<string, object>>> GetChartInfoFunc([FromBody] List<LineChartData> lineChartList)
         {
             List<string> fields = new  List<string>();
             List <string> agr=new List<string>();
             string streamname = string.Empty;
 
-            foreach(EnergyStream eStream in eStreamList)
+            foreach(LineChartData lineChart in lineChartList)
             {
-                fields.Add(eStream.Fields.ToLower());
-                agr.Add(eStream.agr.ToLower());
-                streamname = eStream.Streams;
+                fields.Add(lineChart.field.ToLower());
+                agr.Add(lineChart.agr.ToLower());
+                streamname = lineChart.stream;
             }
 
             using (IDbConnection db = new NpgsqlConnection(_connectionString))

@@ -72,13 +72,13 @@
                                 </MudCardActions>
                          </MudCard>
 
-                        @if (eStreamList.Count > 0)
+                        @if (lineChartList.Count > 0)
                         {
                             <div class="mt-6;">
-                                <MudDataGrid Items="@eStreamList.Take(4)" Class="custom-width" >
+                                <MudDataGrid Items="@lineChartList.Take(4)" Class="custom-width">
                                     <Columns>
-                                        <PropertyColumn Property="x => x.Streams" Title="Stream" />
-                                        <PropertyColumn Property="x => x.Fields" Title="Field" />
+                                        <PropertyColumn Property="x => x.stream" Title="Stream" />
+                                        <PropertyColumn Property="x => x.field" Title="Field" />
                                         <PropertyColumn Property="x => x.agr" Title="Agreegator" />
                                         <TemplateColumn CellClass="d-flex justify-end">
                                             <CellTemplate>
@@ -157,7 +157,8 @@
     private string selectedStream;
     private string selectedField;
     private string selectedAgr;
-    private List<EnergyStream> eStreamList = new List<EnergyStream>();
+    private List<LineChartData> lineChartList = new List<LineChartData>();
+
     private List<EnergyStream> loadStreamField = new List<EnergyStream>();
     private List<Streams> loadStreams = new List<Streams>();
     public bool showComponent = false;
@@ -191,19 +192,24 @@
 
     private async Task AddItem()
     {
+        LineChartData lineChart = new LineChartData();
+        lineChart.stream = selectedStream;
+        lineChart.field = selectedField;
+        lineChart.agr = selectedAgr;
+
         EnergyStream eStream = new EnergyStream();
 
         eStream.Streams = selectedStream;
         eStream.Fields = selectedField;
         eStream.agr = selectedAgr;
 
-        if (!eStreamList.Any(p => p.Equals(eStream)))
+        if (!lineChartList.Any(p => p.Equals(eStream)))
         {
-            eStreamList.Add(eStream);
+            lineChartList.Add(lineChart);
 
 
             /*Display chart*/
-            chartSeriesData = await myChartService.GetChartInfo(eStreamList);
+            chartSeriesData = await myChartService.GetChartInfo(lineChartList);
             showComponent = true;
 
 
@@ -216,9 +222,9 @@
         }
     }
 
-    private async Task DeleteStream(EnergyStream DeleteEStream)
+    private async Task DeleteStream(LineChartData DeleteEStream)
     {
-        eStreamList.Remove(DeleteEStream);
+        lineChartList.Remove(DeleteEStream);
         /*Display chart*/
         chartSeriesData = myChartService.RemoveChartInfo(DeleteEStream);
         showComponent = true;
@@ -234,9 +240,10 @@
         }
         else
         {
-            ChartData cData = new ChartData();
-            cData.charttitle = ChartTitle;
-            cData.EnergyStream = eStreamList;
+            QFChart cData = new QFChart();
+            cData.chartTitle = ChartTitle;
+            cData.chartType = MudBlazor.ChartType.Line;
+            cData.chartDataStreamList = lineChartList.Cast<ChartDataStream>().ToList();
             MudDialog.Close(DialogResult.Ok(cData));
         }
     }

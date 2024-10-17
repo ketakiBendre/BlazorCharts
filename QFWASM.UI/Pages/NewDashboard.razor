@@ -90,9 +90,9 @@
                                   ChartOptions="@options" />
 
                         <MudGrid>
-                            <MudItem xs="6">
-                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : series[Index].Name)</MudText>
-                            </MudItem>
+                            @*<MudItem xs="6"> // Need to maintain seprate index for each chart, commenting now
+                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : lineChart.series[Index].Name)</MudText>
+                            </MudItem>*@
                             <MudItem xs="6">
                                 <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
                             </MudItem>
@@ -128,7 +128,7 @@
     private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
     private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
 
-    private ChartData ReturnedLineChart = new ChartData();
+    private QFChart ReturnedLineChart = new QFChart();
 
     private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
     
@@ -168,9 +168,9 @@
         if (result.Data != null && !result.Canceled)
         {
             
-            ReturnedLineChart = (ChartData) result.Data;
-            var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.EnergyStream);
-            lineSeriesData.chartTitle = ReturnedLineChart.charttitle;
+            ReturnedLineChart = (QFChart) result.Data;
+            var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.chartDataStreamList.Cast<LineChartData>().ToList());
+            lineSeriesData.chartTitle = ReturnedLineChart.chartTitle;
             chartPositions[lineSeriesData] = new ChartPosition { X = 350, Y = 350 };
             lineChartList.Add(lineSeriesData);
             showLineChart = true;
@@ -193,7 +193,7 @@
     {
         if (string.IsNullOrEmpty(TextValue))
         {
-            ShowAlert("Please Enter Dashboard name before saving !!", Defaults.Classes.Position.BottomRight);
+            ShowAlert("Please Enter Dashboard name before saving !!", Defaults.Classes.Position.BottomRight,Severity.Error);
         }
         else
         {
@@ -209,7 +209,7 @@
                 if(rowsAffected > 0)
                 {
                     Navigation.NavigateTo("/managedash");
-                    ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight);
+                    ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight,Severity.Success);
                 }
             }
             
@@ -220,11 +220,11 @@
     {
         if (string.IsNullOrEmpty(TextValue))
         {
-            ShowAlert("Please Enter Dashboard name before saving !!", Defaults.Classes.Position.BottomRight);
+            ShowAlert("Please Enter Dashboard name before saving !!", Defaults.Classes.Position.BottomRight,Severity.Error);
         }
         else
         {
-            ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight);
+            ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight, Severity.Success);
         }
     }
 
@@ -255,11 +255,11 @@
     }
 
 
-    void ShowAlert(string message, string position)
+    void ShowAlert(string message, string position,Severity sev)
     {
         Snackbar.Clear();
         Snackbar.Configuration.PositionClass = position;
-        Snackbar.Add(message, Severity.Error, c => c.SnackbarVariant = Variant.Outlined);
+        Snackbar.Add(message, sev, c => c.SnackbarVariant = Variant.Outlined);
     }
     
 }

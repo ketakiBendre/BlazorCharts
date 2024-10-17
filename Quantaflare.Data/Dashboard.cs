@@ -14,6 +14,8 @@ namespace Quantaflare.Data
         public string dashName { get; set; } = string.Empty;
 
         public string dashType { get; set; }= string.Empty;
+        public ChartPosition chartPosition { get; set; } = new ChartPosition();
+        public List<QFChart> chartList { get; set; } = new List<QFChart>();
 
 
     }
