@@ -5,6 +5,8 @@ using Npgsql;
 using Quantaflare.Data;
 using System.Data;
 using System.Text;
+using static MudBlazor.CategoryTypes;
+using System.Text.Json;
 
 namespace Quantaflare.API.Controllers
 {
@@ -135,6 +137,31 @@ namespace Quantaflare.API.Controllers
                 return dynamicResults;
             }
         }
+
+        [HttpPost]
+        [Route("PostQFChart")]
+        public async Task<IActionResult> PostQFChart(QFChart qfChart)
+        {
+            
+
+            string jsonData = System.Text.Json.JsonSerializer.Serialize(qfChart.chartDataStreamList);
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                connection.Open();
+                var sql = "INSERT INTO qfchart (charttitle, charttype, data) values(@charttitle, @charttype, @jsonData::jsonb)";
+                var parameters = new
+                {
+                    charttitle = qfChart.chartTitle,
+                    charttype = qfChart.chartType.ToString(), 
+                    jsonData 
+                };
+
+                int rowsAffected = await connection.ExecuteAsync(sql, parameters); 
+                return Ok(rowsAffected);
+            }
+        }
+
         private async Task<List<Dictionary<string, object>>> getChartInfoAsync([FromBody] List<EnergyStream> eStreamList)
         {
             string GroupByFields = "skv.timestamp";
