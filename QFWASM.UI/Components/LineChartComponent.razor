@@ -29,19 +29,20 @@
                                  <MudCardContent>
                                     <MudItem xs="12" sm="10" md="10">
                                         <MudStack Row="true" Justify="Justify.SpaceBetween">
-                                            <MudSelect T="string" @bind-Value="selectedStream" Label="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
-                                            @if (loadStreamField == null)
-                                            {
-                                                <MudSelectItem Value="@("Battery")">Loading...</MudSelectItem>
-                                            }
-                                            else
-                                            {
-                                                @foreach (var lStream in loadStreams)
-                                                {
-                                                    <MudSelectItem T="string" Value="@lStream.StreamName">@lStream.StreamName</MudSelectItem>
-                                                }
-                                            }
+                                             <MudSelect T="string" @bind-Value="selectedStream" Label="Stream" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                                 @if (loadStreamField == null)
+                                                 {
+                                                     <MudSelectItem Value="@("Battery")">Loading...</MudSelectItem>
+                                                 }
+                                                 else
+                                                 {
+                                                     @foreach (var lStream in loadStreams)
+                                                     {
+                                                         <MudSelectItem T="string" Value="@lStream.StreamName">@lStream.StreamName</MudSelectItem>
+                                                     }
+                                                 }
                                             </MudSelect>
+
                                             <MudSelect T="string" @bind-Value="selectedField" Label="Field" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
                                                 @if (loadStreamField == null)
                                                 {
@@ -93,7 +94,126 @@
                             </div>
                         }
                     </MudStack>
+
                 </MudItem>
+
+                 <!--THis is the new style by amol - lets see-->
+
+                <MudItem xs="12" sm="6" md="6" Class="mb-4">
+
+                   <MudStack Row = "false">
+
+                        <MudCard>
+                       <MudCardContent>
+                          <MudItem xs="12" sm="10" md="10">
+                              <MudStack Row="true" class="d-flex justify-space-between flex-grow-1 gap-4">
+
+                                  
+                                      <MudList  T="string" @bind-SelectedValue="selectedStream" Label="Stream" Variant="Variant.Outlined" 
+                                               SelectionMode ="SelectionMode.SingleSelection" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                            <MudListSubheader>
+                                                <MudStack Row=true AlignItems="AlignItems.Center">
+                                                    <MudText Typo="Typo.h6" Color="Color.Secondary">Stream:</MudText>
+                                                    <MudChip Color="@Color.Primary">
+                                                        @(selectedStream ?? "None")
+                                                    </MudChip>
+                                                </MudStack>
+                                            </MudListSubheader>
+                                              @if (loadStreamField == null)
+                                              {
+                                                  <MudListItem Value="@("Battery")">Loading...</MudListItem>
+                                              }
+                                              else
+                                              {
+                                                  @foreach (var lStream in loadStreams)
+                                                  {
+                                                      <MudListItem T="string" Value="@lStream.StreamName">@lStream.StreamName</MudListItem>
+                                                  }
+                                                }
+                                      </MudList>
+                                  
+                                  
+                                  
+                                  
+                                        <MudList T="string" @bind-SelectedValue="selectedField" Label="Field" Variant="Variant.Outlined" 
+                                                 SelectionMode ="SelectionMode.SingleSelection" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                            <MudListSubheader>
+                                                 <MudStack Row=true AlignItems="AlignItems.Center">
+                                                    <MudText Typo="Typo.h6" Color="Color.Secondary">Field:</MudText>
+                                                     <MudChip Color="@Color.Warning">
+                                                        @(selectedField ?? "None")
+                                                    </MudChip>
+                                                </MudStack>
+                                            </MudListSubheader>
+                                            @if (loadStreamField == null)
+                                            {
+                                                <MudListItem Value="@("RPM")">Loading...</MudListItem>
+                                            }
+                                            else
+                                            {
+                                                @if (loadStreamField.Any(h => h.Streams == selectedStream))
+                                                {
+                                                    @foreach (var eField in loadStreamField.Where(e => e.Streams == selectedStream))
+                                                    {
+                                                        <MudListItem T="string" Value="@eField.Fields">@eField.Fields</MudListItem>
+                                                    }
+                                                }
+                                            }
+                                        </MudList>
+                                  
+
+                                        <MudList T="string" @bind-SelectedValue="selectedAgr" Label="Agreegator" Variant="Variant.Outlined" 
+                                                 SelectionMode ="SelectionMode.SingleSelection" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                            <MudListSubheader>
+                                                 <MudStack Row=true AlignItems="AlignItems.Center">
+                                                    <MudText Typo="Typo.h6" Color="Color.Secondary">Agreegator:</MudText>
+                                                    <MudChip Color="@Color.Default">
+                                                    @(selectedAgr ?? "None")
+                                                </MudChip>
+                                                </MudStack>
+                                            </MudListSubheader>
+                                            <MudListItem Value="@("Avg")">Avg</MudListItem>
+                                            <MudListItem Value="@("Count")">Count</MudListItem>
+                                            <MudListItem Value="@("Max")">Max</MudListItem>
+                                            <MudListItem Value="@("Min")">Min</MudListItem>
+                                        </MudList>
+                                  
+                              </MudStack>
+                              <!--stack end -->
+
+                          </MudItem>
+                      </MudCardContent>
+                      <MudCardActions>
+                          <MudButton Disabled="!IsAddButtonEnabled" OnClick="AddItem" Color="Color.Primary">Add</MudButton>
+                      </MudCardActions>
+               </MudCard>
+
+              @if (lineChartList.Count > 0)
+              {
+                  <div class="mt-6;">
+                      <MudDataGrid Items="@lineChartList.Take(4)" Class="custom-width">
+                          <Columns>
+                              <PropertyColumn Property="x => x.stream" Title="Stream" />
+                              <PropertyColumn Property="x => x.field" Title="Field" />
+                              <PropertyColumn Property="x => x.agr" Title="Agreegator" />
+                              <TemplateColumn CellClass="d-flex justify-end">
+                                  <CellTemplate>
+                                      <MudStack Row>
+                                          <MudButton EndIcon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteStream(context.Item))"></MudButton>
+                                      </MudStack>
+                                  </CellTemplate>
+                              </TemplateColumn>
+                          </Columns>
+
+                      </MudDataGrid>
+                  </div>
+              }
+          </MudStack>
+
+          </MudItem>
+
+
+                 <!--This is for preview pane-->
     
                 <MudItem xs="12" sm="6" md="6">
                     <MudCard Class="mb-4">
