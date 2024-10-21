@@ -117,8 +117,9 @@
 @code {
     [Parameter]
     public string? clusterid { get; set; } = string.Empty;
+    public static int dashId=0;
 
-    public string TextValue { get; set; } = string.Empty;
+    public string TextValue { get; set; } = (dashId == 0) ? "New Dashboard" : $"New Dashboard {dashId}";
     public bool Dense_Radio { get; set; } = true;
     private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, BackdropClick = false};
 
@@ -131,7 +132,7 @@
     private QFChart ReturnedLineChart = new QFChart();
 
     private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
-    
+
     private Dictionary<ChartSeriesData, ChartPosition> chartPositions = new Dictionary<ChartSeriesData, ChartPosition>();
     private bool isDragging = false;
     private double offsetX;
@@ -140,6 +141,7 @@
 
     protected override void OnInitialized()
     {
+        dashId++;
         // Get the URI of the current request
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
 

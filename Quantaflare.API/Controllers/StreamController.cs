@@ -1,12 +1,16 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Options;
+
 using Npgsql;
 using Quantaflare.Data;
 using System.Data;
 using System.Text;
-using static MudBlazor.CategoryTypes;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using static MudBlazor.CategoryTypes;
+
+
 
 namespace Quantaflare.API.Controllers
 {
@@ -140,12 +144,14 @@ namespace Quantaflare.API.Controllers
 
         [HttpPost]
         [Route("PostQFChart")]
-        public async Task<IActionResult> PostQFChart(QFChart qfChart)
+        public async Task<IActionResult> PostQFChart([FromBody] QFChart qfChart)
         {
-            
-
-            string jsonData = System.Text.Json.JsonSerializer.Serialize(qfChart.chartDataStreamList);
-
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+            var jsonData = JsonSerializer.Serialize<List<ChartDataStream>>(qfChart.chartDataStreamList, new JsonSerializerOptions { WriteIndented = true });
+            //var jsonDeString = JsonSerializer.Deserialize<List<ChartDataStream>>(jsonData);
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();

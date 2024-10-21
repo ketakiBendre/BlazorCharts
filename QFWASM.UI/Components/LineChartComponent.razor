@@ -363,7 +363,10 @@
             QFChart cData = new QFChart();
             cData.chartTitle = ChartTitle;
             cData.chartType = MudBlazor.ChartType.Line;
-            cData.chartDataStreamList = lineChartList.Cast<ChartDataStream>().ToList();
+            foreach (var lineChart in lineChartList)
+            {
+                cData.chartDataStreamList.Add(lineChart);
+            }
 
             var response = await Http.PostAsJsonAsync("api/Stream/PostQFChart", cData);
             if (response.IsSuccessStatusCode)
