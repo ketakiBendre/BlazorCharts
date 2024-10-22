@@ -1,4 +1,4 @@
-﻿@page "/newDashboard"
+﻿@page "/newDashboard/{mode}"
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @using Quantaflare.Data
@@ -17,7 +17,7 @@
                 <MudGrid>
                      <MudItem xs="12" sm="12" md="12">
                             <MudStack Row = "false">
-                                <MudText Typo="Typo.h5">New Unit Dashboard @clusterid</MudText>
+                                <MudText Typo="Typo.h5">New Unit Dashboard</MudText>
                             </MudStack>
 
                     </MudItem>
@@ -117,9 +117,11 @@
 @code {
     [Parameter]
     public string? clusterid { get; set; } = string.Empty;
-    public static int dashId=0;
 
-    public string TextValue { get; set; } = (dashId == 0) ? "New Dashboard" : $"New Dashboard {dashId}";
+    [Parameter]
+    public string Mode { get; set; }
+
+    public string TextValue { get; set; } = string.Empty;
     public bool Dense_Radio { get; set; } = true;
     private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, BackdropClick = false};
 
@@ -130,7 +132,7 @@
     private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
 
     private QFChart ReturnedLineChart = new QFChart();
-
+    private Dashboard ds;
     private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
 
     private Dictionary<ChartSeriesData, ChartPosition> chartPositions = new Dictionary<ChartSeriesData, ChartPosition>();
@@ -139,21 +141,84 @@
     private double offsetY;
     private ChartSeriesData draggingChart = new ChartSeriesData();
 
-    protected override void OnInitialized()
+    protected async override Task OnInitializedAsync()
     {
-        dashId++;
         // Get the URI of the current request
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
 
         // Parse the query parameters
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        clusterid = query["clusterid"]; // Retrieve the value of 'clusterid'
+        clusterid = query["clusterid"]; 
 
         // Log to console for debugging
         Console.WriteLine($"Received Cluster ID: {clusterid}");
+        TextValue = await setDefaultDashboardName(clusterid);
+
+
+        ds = new Dashboard();
+        ds.clusterId = int.Parse(clusterid);
+        ds.createdOn = DateTime.Now;
+        ds.dashName = TextValue;
+        ds.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
+        var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", ds);
+        if (response.IsSuccessStatusCode)
+        {
+            ds.dashid = await response.Content.ReadFromJsonAsync<int>();
+            Console.WriteLine($"Received Cluster ID: {ds.dashid}");
+        }
     }
 
+    protected override void OnParametersSet()
+    {
+        if (Mode == "new")
+        {
+            // Logic for creating a new dashboard
+            Console.WriteLine("Creating a new dashboard.");
+        }
+        else if (Mode == "edit")
+        {
+            // Logic for editing an existing dashboard
+            Console.WriteLine("Editing an existing dashboard.");
+        }
+    }
 
+    private async Task<string> setDefaultDashboardName(string clusterid)
+    {
+        string newDashName ="New Dashboard";
+        //Get Dashboard name for by default New Dashboard
+        var url_dashname = $"api/Dashboard/GetDashboardName?clusterid={clusterid}";
+        var response = await Http.GetAsync(url_dashname);
+        if (response.IsSuccessStatusCode)
+        {
+            var responseName = await response.Content.ReadAsStringAsync();
+            if (responseName.StartsWith("New Dashboard"))
+            {
+                var numberPart = responseName.Substring(newDashName.Length).Trim();
+
+                // If the number part is empty, start from 1
+                if (string.IsNullOrWhiteSpace(numberPart))
+                {
+                    // Start from "New Dashboard 1"
+                    newDashName = "New Dashboard 1";
+                }
+                else if (int.TryParse(numberPart, out int dashboardNumber))
+                {
+                    // If there is a number, increment it
+                    dashboardNumber++;
+
+                    // Create the new dashboard name with the incremented number
+                    newDashName = $"New Dashboard {dashboardNumber}";
+                }
+                else
+                {
+                    // If the number part isn't valid, handle it (optional)
+                    Console.WriteLine("The current dashboard name does not have a valid number.");
+                }
+            }
+        }
+        
+        return newDashName;
+    }
 
     private async Task LineChartPaper()
     {
@@ -176,7 +241,17 @@
             chartPositions[lineSeriesData] = new ChartPosition { X = 350, Y = 350 };
             lineChartList.Add(lineSeriesData);
             showLineChart = true;
-            
+            var chartDetail = new Dictionary<int, ChartPosition>{
+                                 { ReturnedLineChart.chartID, new ChartPosition { X = 350, Y = 350 } }
+                                };
+
+            ds.QFChartList.Add(chartDetail);
+            var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
+            if (response.IsSuccessStatusCode)
+            {
+                var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
+                Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+            }
         }
     }
 
@@ -199,22 +274,8 @@
         }
         else
         {
-            Dashboard ds = new Dashboard();
-            ds.clusterId = int.Parse(clusterid);
-            ds.createdOn = DateTime.Now;
-            ds.dashName = TextValue;
-            ds.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard"; 
-            var response = await  Http.PostAsJsonAsync("api/Dashboard/PostDashboard", ds);
-            if (response.IsSuccessStatusCode)
-            {
-                int rowsAffected = await response.Content.ReadFromJsonAsync<int >();
-                if(rowsAffected > 0)
-                {
                     Navigation.NavigateTo("/managedash");
                     ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight,Severity.Success);
-                }
-            }
-            
         }
     }
 

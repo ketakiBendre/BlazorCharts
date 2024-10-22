@@ -5,6 +5,8 @@ using Npgsql;
 using Quantaflare.Data;
 using System.Data;
 using System.Data.Common;
+using static MudBlazor.CategoryTypes;
+using System.Text.Json;
 
 namespace Quantaflare.API.Controllers
 {
@@ -67,10 +69,25 @@ namespace Quantaflare.API.Controllers
             {
                 db.Open();
                 var result = await db.QueryAsync<Dashboard>("SELECT * FROM public.getdashboard(@inputId)", new { inputId });
-                return result; // Ensure you return the result here
+                return result;
             }
         }
 
+        [HttpGet]
+        [Route("GetDashboardName")]
+        public IActionResult GetDashboardName(int clusterId)
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                connection.Open();
+                var dashboardName = connection.QuerySingleOrDefault<string>("SELECT dashname FROM dashboard WHERE clusterid = @clusterId AND dashname like \'New Dashboard%\' ORDER BY dashid DESC LIMIT 1", new { clusterId });
+                if (dashboardName == null)
+                {
+                    return Ok(string.Empty); 
+                }
+                return Ok(dashboardName.Trim());
+            }
+        }
 
         [HttpPost]
         [Route("PostDashboard")]
@@ -78,12 +95,40 @@ namespace Quantaflare.API.Controllers
          {
              using (var connection = new NpgsqlConnection(_connectionString))
              {
-                 connection.Open();
-                var sql = "INSERT INTO dashboard (clusterid, createdon, dashname, dashtype) values(@clusterId, @createdOn, @dashName, @dashType)";
-                int rowsAffected = connection.Execute(sql, ds);
-                return Ok(rowsAffected);
+                connection.Open();
+                var sql = @"INSERT INTO dashboard (clusterid, createdon, dashname, dashtype) 
+                    VALUES (@clusterId, @createdOn, @dashName, @dashType) 
+                    RETURNING dashid;"; 
+
+                // Execute the query and capture the returned ID
+                var dashboardId = connection.ExecuteScalar<int>(sql, ds);
+
+                // Return the dashboard ID
+                return Ok(dashboardId);
             }
          }
+
+        [HttpPost]
+        [Route("UpdateDashboard")]
+        public IActionResult UpdateDashboard(Dashboard ds)
+        {
+            var jsonData = JsonSerializer.Serialize(ds.QFChartList);
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                connection.Open();
+                var sql = "UPDATE dashboard SET chartinfo=@jsonData::jsonb WHERE clusterid =@clusterId and dashname= @dashName and dashid =@dashid";
+                var parameters = new
+                {
+                    jsonData,
+                    clusterId = ds.clusterId,
+                    dashName = ds.dashName,
+                    dashid = ds.dashid
+                };
+                int rowsAffected = connection.Execute(sql, parameters);
+                return Ok(rowsAffected);
+            }
+        }
 
         [HttpGet]
         [Route("getCluster")]

@@ -57,7 +57,12 @@
                                 <TemplateColumn CellClass="d-flex justify-end">
                                     <CellTemplate>
                                         <MudStack Row>
-                                        <MudButton EndIcon="@Icons.Material.Filled.Edit" Variant="@Variant.Filled" Color="@Color.Primary"></MudButton>
+                                                <MudButton EndIcon="@Icons.Material.Filled.Edit"
+                                                           Variant="@Variant.Filled"
+                                                           Color="@Color.Primary"
+                                                           OnClick="@(() => editDash(context.Item.dashName))">
+                                                    Edit
+                                                </MudButton>
                                         </MudStack>
                                     </CellTemplate>
                                 </TemplateColumn>
@@ -120,6 +125,13 @@
 
     private void newDash()
     {
-        navManager.NavigateTo($"/newDashboard?clusterid={clusterid}");
+        string mode = "new";
+        navManager.NavigateTo($"/newDashboard/{mode}?clusterid={clusterid}");
+    }
+
+    private void editDash(string dashName)
+    {
+        string mode = "edit";
+        navManager.NavigateTo($"/newDashboard/{mode}?dashboardName={dashName}&clusterid={clusterid}");
     }
 }
