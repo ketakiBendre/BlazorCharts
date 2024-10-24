@@ -15,6 +15,5 @@ namespace Quantaflare.Data
     {
         public string stream { get; set; } = string.Empty;
         public string field { get; set; } = string.Empty;
-
     }
 }

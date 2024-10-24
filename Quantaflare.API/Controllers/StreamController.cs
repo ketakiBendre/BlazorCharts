@@ -8,6 +8,7 @@ using System.Data;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using static MudBlazor.CategoryTypes;
 
 
@@ -146,25 +147,91 @@ namespace Quantaflare.API.Controllers
         [Route("PostQFChart")]
         public async Task<IActionResult> PostQFChart([FromBody] QFChart qfChart)
         {
+            if (qfChart == null)
+            {
+                return BadRequest("Invalid chart data.");
+            }
             var options = new JsonSerializerOptions
             {
-                WriteIndented = true
+                WriteIndented = true,
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver()
             };
-            var jsonData = JsonSerializer.Serialize<List<ChartDataStream>>(qfChart.chartDataStreamList, new JsonSerializerOptions { WriteIndented = true });
-            //var jsonDeString = JsonSerializer.Deserialize<List<ChartDataStream>>(jsonData);
+            var jsonData = JsonSerializer.Serialize<List<ChartDataStream>>(qfChart.chartDataStreamList, options);
+           // var jsonDeString = JsonSerializer.Deserialize<List<ChartDataStream>>(jsonData);
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
-                var sql = "INSERT INTO qfchart (charttitle, charttype, data) values(@charttitle, @charttype, @jsonData::jsonb)";
+                var sql = "INSERT INTO qfchart (charttitle, charttype, data) VALUES (@charttitle, @charttype, @jsonData::json) RETURNING chartid;";
+
                 var parameters = new
                 {
                     charttitle = qfChart.chartTitle,
-                    charttype = qfChart.chartType.ToString(), 
-                    jsonData 
+                    charttype = qfChart.chartType.ToString(),
+                    jsonData
                 };
 
-                int rowsAffected = await connection.ExecuteAsync(sql, parameters); 
-                return Ok(rowsAffected);
+                // Execute the query and retrieve the generated chartid
+                try
+                {
+                    // Execute the query and retrieve the generated chartid
+                    var chartId = await connection.ExecuteScalarAsync<int>(sql, parameters);
+                    return Ok(chartId); 
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception (optional) and return an error response
+                    return StatusCode(500, $"Internal server error: {ex.Message}");
+                }
+            }
+        }
+
+        [HttpGet]
+        [Route("GetQFChart")]
+        public async Task<IActionResult> GetQFChart([FromQuery] string chartId)
+        {
+            if (string.IsNullOrWhiteSpace(chartId))
+            {
+                return BadRequest("No chart IDs provided.");
+            }
+
+            // Split the string into an array of integers and handle potential parsing errors
+            int[] chartIdArray;
+            try
+            {
+                chartIdArray = chartId.Split(',').Select(int.Parse).ToArray();
+            }
+            catch (FormatException ex)
+            {
+                return BadRequest("Invalid chart ID format: " + ex.Message);
+            }
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                try
+                {
+                    var qfChart = await connection.QueryAsync<QFChart>(
+                        "SELECT chartid, charttitle, charttype, data AS chartDataStreamJson FROM qfchart WHERE chartid = ANY(@chartId);",
+                        new { chartId = chartIdArray }
+                    );
+
+                    // Convert to list
+                    var qfChartList = qfChart.ToList();
+
+                    // Deserialize JSON if charts were found
+                    foreach (var chart in qfChartList)
+                    {
+                        chart.DeserializeChartDataStreamJson();
+                    }
+
+                    return Ok(qfChartList); // Return the list of charts
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception (you could use a logging framework)
+                    return StatusCode(500, "Internal server error: " + ex.Message);
+                }
             }
         }
 

@@ -89,6 +89,27 @@ namespace Quantaflare.API.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("GetDashboardDetails")]
+        public IActionResult GetDashboardDetails(int clusterId, string dashname)
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                connection.Open();
+                var parameters = new { clusterId, dashname };
+                var dashboardDetail = connection.QuerySingleOrDefault<Dashboard>(
+    "SELECT dashid, clusterid, createdon, dashname, dashtype, chartinfo AS QFChartListJson FROM dashboard WHERE clusterid = @clusterId AND dashname = @dashname",
+    parameters
+);
+
+                if (dashboardDetail != null)
+                {
+                    dashboardDetail.DeserializeQFChartList(); // Call the method to deserialize the QFChartList
+                }
+                return Ok(dashboardDetail);
+            }
+        }
+
         [HttpPost]
         [Route("PostDashboard")]
         public IActionResult PostDashboard(Dashboard ds)

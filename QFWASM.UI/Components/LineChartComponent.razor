@@ -371,12 +371,19 @@
             var response = await Http.PostAsJsonAsync("api/Stream/PostQFChart", cData);
             if (response.IsSuccessStatusCode)
             {
-                int rowsAffected = await response.Content.ReadFromJsonAsync<int>();
-                if (rowsAffected > 0)
+                int chartId = await response.Content.ReadFromJsonAsync<int>(); // Read the returned chartId
+                if (chartId > -1) // Check if a valid chartId was returned
                 {
+                    cData.chartID = chartId;
                     MudDialog.Close(DialogResult.Ok(cData));
-                    ShowAlert("Chart saved !!", Defaults.Classes.Position.BottomRight);
+                    ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight);
                 }
+            }
+            else
+            {
+                // Handle the error response (optional)
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight);
             }
 
            
