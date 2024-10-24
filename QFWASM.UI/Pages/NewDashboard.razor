@@ -152,86 +152,95 @@
 
         if (Mode == "new")
         {
-            //Set Default name to new dashboard
-            TextValue = await setDefaultDashboardName(clusterid);
-
-
-            ds = new Dashboard();
-            ds.clusterId = int.Parse(clusterid);
-            ds.createdOn = DateTime.Now;
-            ds.dashName = TextValue;
-            ds.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
-            var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", ds);
-            if (response.IsSuccessStatusCode)
-            {
-                ds.dashid = await response.Content.ReadFromJsonAsync<int>();
-            }
-            else
-            {
-                Console.WriteLine("Failed in creating new Dashboard.");
-            }
+            ds = await CreateNewDashboard(clusterid);
         }
         else if (Mode == "edit")
         {
             var dashboardName = query["dashboardName"];
-            if (dashboardName != null)
-            {
-                TextValue = dashboardName;
-            }
-            var url_dashname = $"api/Dashboard/GetDashboardDetails?clusterid={clusterid}&&dashname={dashboardName}";
-            ds = await Http.GetFromJsonAsync<Dashboard>(url_dashname);
-            if(ds != null)
-            {
-                Dense_Radio = (ds.dashType == "Unit Dashboard") ? true : false;
-                if (ds.QFChartList != null)
-                {
-                    List<int> chartIdList = new List<int>();
-                    foreach (var chart in ds.QFChartList)
-                    {
-                        foreach (var kvp in chart)
-                        {
-                            chartIdList.Add(kvp.Key);
-                            ChartPosition position = kvp.Value;
-                        }
-                    }
-                    var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
-                    try
-                    {
-                        var dashboard_qfChartList = await Http.GetFromJsonAsync<QFChart[]>(url_QFChart);
-                        if (dashboard_qfChartList != null)
-                        {
-                            foreach (var dashboard_chart in dashboard_qfChartList)
-                            {
-                                if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
-                                {
-                                    showLineChart = true;
-                                    var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
-                                    lineSeriesData.chartTitle = dashboard_chart.chartTitle;
-                                    var chartPosition = ds.QFChartList.SelectMany(chartDict => chartDict)
-                                                                 .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;
-                                    lineChartList.Add(lineSeriesData);
-                                    if (chartPosition != null)
-                                    {
-                                        chartPositions[lineSeriesData] = chartPosition;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        ShowAlert("No Data to display check other Dashboard !!", Defaults.Classes.Position.BottomRight, Severity.Error);
-                    }
-                }
-            }
+            ds = await editDashboard(clusterid, dashboardName);
         }
 
     }
 
-    private async Task<string> CreateNewDashboard(string clusterid)
+    private async Task<Dashboard> CreateNewDashboard(string clusterid)
     {
-        
+        //Set Default name to new dashboard
+        TextValue = await setDefaultDashboardName(clusterid);
+
+
+        var newDash = new Dashboard();
+        newDash.clusterId = int.Parse(clusterid);
+        newDash.createdOn = DateTime.Now;
+        newDash.dashName = TextValue;
+        newDash.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
+        var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", newDash);
+        if (response.IsSuccessStatusCode)
+        {
+            newDash.dashid = await response.Content.ReadFromJsonAsync<int>();
+        }
+        else
+        {
+            Console.WriteLine("Failed in creating new Dashboard.");
+        }
+        return newDash;
     }
+
+    private async Task<Dashboard> editDashboard(string clusterid, string dashboardName)
+    {
+        Dashboard oldDash = new Dashboard();
+        if (dashboardName != null)
+        {
+            TextValue = dashboardName;
+        }
+        var url_dashname = $"api/Dashboard/GetDashboardDetails?clusterid={clusterid}&&dashname={dashboardName}";
+        oldDash = await Http.GetFromJsonAsync<Dashboard>(url_dashname);
+        if (oldDash != null)
+        {
+            Dense_Radio = (oldDash.dashType == "Unit Dashboard") ? true : false;
+            if (oldDash.QFChartList != null)
+            {
+                List<int> chartIdList = new List<int>();
+                foreach (var chart in oldDash.QFChartList)
+                {
+                    foreach (var kvp in chart)
+                    {
+                        chartIdList.Add(kvp.Key);
+                        ChartPosition position = kvp.Value;
+                    }
+                }
+                var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
+                try
+                {
+                    var dashboard_qfChartList = await Http.GetFromJsonAsync<QFChart[]>(url_QFChart);
+                    if (dashboard_qfChartList != null)
+                    {
+                        foreach (var dashboard_chart in dashboard_qfChartList)
+                        {
+                            if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
+                            {
+                                showLineChart = true;
+                                var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
+                                lineSeriesData.chartTitle = dashboard_chart.chartTitle;
+                                var chartPosition = oldDash.QFChartList.SelectMany(chartDict => chartDict)
+                                                             .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;
+                                lineChartList.Add(lineSeriesData);
+                                if (chartPosition != null)
+                                {
+                                    chartPositions[lineSeriesData] = chartPosition;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ShowAlert("No Data to display check other Dashboard !!", Defaults.Classes.Position.BottomRight, Severity.Error);
+                }
+            }
+        }
+        return oldDash;
+    }
+
     private async Task<string> setDefaultDashboardName(string clusterid)
     {
         string newDashName ="New Dashboard";
