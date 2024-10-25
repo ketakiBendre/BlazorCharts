@@ -11,7 +11,7 @@
         <MudItem md="12" sm="12" xs="12">
             <!--main page left column-->
 
-            <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-0" Elevation="2">
+            <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-0" Elevation="0">
 
                 <MudGrid>
           
@@ -50,7 +50,7 @@
 
                         <!-- Data Grid to display Dashboards -->
                     <div class="mt-6;">
-                        <MudDataGrid Items="@dashB.Take(10)" Class="custom-width">
+                        <MudDataGrid T="Dashboard" Items="@dashB" Class="custom-width">
                         <Columns>
                             <PropertyColumn Property="x => x.dashName" Title="Dashboard Name"/>
                             <PropertyColumn Property="x => x.createdOn" Title="Created On" />
@@ -67,7 +67,9 @@
                                     </CellTemplate>
                                 </TemplateColumn>
                         </Columns>
-
+                         <PagerContent>
+                            <MudDataGridPager T="Dashboard" />
+                        </PagerContent>
                     </MudDataGrid>
                     </div>
                 </MudPaper>
