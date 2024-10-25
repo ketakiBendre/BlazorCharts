@@ -319,14 +319,7 @@
         lineChart.stream = selectedStream;
         lineChart.field = selectedField;
         lineChart.agr = selectedAgr;
-
-        EnergyStream eStream = new EnergyStream();
-
-        eStream.Streams = selectedStream;
-        eStream.Fields = selectedField;
-        eStream.agr = selectedAgr;
-
-        if (!lineChartList.Any(p => p.Equals(eStream)))
+        if (!lineChartList.Any(p => p.Equals(lineChart)))
         {
             lineChartList.Add(lineChart);
 
@@ -361,7 +354,7 @@
         {
             ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight);
         }
-        else
+        else if (lineChartList.Any())
         {
             QFChart cData = new QFChart();
             cData.chartTitle = ChartTitle;
@@ -388,8 +381,10 @@
                 var errorMessage = await response.Content.ReadAsStringAsync();
                 ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight);
             }
-
-           
+        }
+        else
+        {
+            ShowAlert("Please Select Streams, Fields and agreegators for Line chart !!", Defaults.Classes.Position.BottomRight);
         }
     }
 
