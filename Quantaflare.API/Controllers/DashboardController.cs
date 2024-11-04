@@ -114,15 +114,26 @@ namespace Quantaflare.API.Controllers
         [Route("PostDashboard")]
         public IActionResult PostDashboard(Dashboard ds)
          {
-             using (var connection = new NpgsqlConnection(_connectionString))
+            
+            using (var connection = new NpgsqlConnection(_connectionString))
              {
                 connection.Open();
-                var sql = @"INSERT INTO dashboard (clusterid, createdon, dashname, dashtype) 
-                    VALUES (@clusterId, @createdOn, @dashName, @dashType) 
-                    RETURNING dashid;"; 
+                var jsonData = JsonSerializer.Serialize(ds.QFChartList);
+                var sql = @"INSERT INTO dashboard (clusterid, createdon, dashname, dashtype,chartinfo) 
+                    VALUES (@clusterId, @createdOn, @dashName, @dashType,@jsonData::json) 
+                    RETURNING dashid;";
+
+                var parameters = new
+                {
+                    clusterId = ds.clusterId,
+                    createdOn = DateTime.UtcNow, // Assuming you want to use the current UTC time
+                    dashName = ds.dashName,
+                    dashType = ds.dashType,
+                    jsonData = jsonData
+                };
 
                 // Execute the query and capture the returned ID
-                var dashboardId = connection.ExecuteScalar<int>(sql, ds);
+                var dashboardId = connection.ExecuteScalar<int>(sql, parameters);
 
                 // Return the dashboard ID
                 return Ok(dashboardId);

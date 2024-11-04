@@ -116,7 +116,7 @@
 
 @code {
     [Parameter]
-    public string? clusterid { get; set; } = string.Empty;
+    public string? clusterid { get; set; } = "0";
 
     [Parameter]
     public string Mode { get; set; }
@@ -152,7 +152,8 @@
 
         if (Mode == "new")
         {
-            ds = await CreateNewDashboard(clusterid);
+            //Set Default name to new dashboard
+            TextValue = await setDefaultDashboardName(clusterid);
         }
         else if (Mode == "edit")
         {
@@ -162,17 +163,35 @@
 
     }
 
-    private async Task<Dashboard> CreateNewDashboard(string clusterid)
+    private async Task<Dashboard> CreateNewDashboard()
     {
-        //Set Default name to new dashboard
-        TextValue = await setDefaultDashboardName(clusterid);
-
 
         var newDash = new Dashboard();
         newDash.clusterId = int.Parse(clusterid);
         newDash.createdOn = DateTime.Now;
         newDash.dashName = TextValue;
         newDash.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
+        var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", newDash);
+        if (response.IsSuccessStatusCode)
+        {
+            newDash.dashid = await response.Content.ReadFromJsonAsync<int>();
+        }
+        else
+        {
+            Console.WriteLine("Failed in creating new Dashboard.");
+        }
+        return newDash;
+    }
+
+    private async Task<Dashboard> CreateNewDashboard(Dictionary<int, ChartPosition> chartDetail)
+    {
+
+        var newDash = new Dashboard();
+        newDash.clusterId = int.Parse(clusterid);
+        newDash.createdOn = DateTime.Now;
+        newDash.dashName = TextValue;
+        newDash.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
+        newDash.QFChartList.Add(chartDetail);
         var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", newDash);
         if (response.IsSuccessStatusCode)
         {
@@ -275,13 +294,13 @@
                 }
             }
         }
-        
+
         return newDashName;
     }
 
     private async Task LineChartPaper()
     {
-        
+
         var parameters = new DialogParameters()
         {
             { "Title", "Add Line Chart" },
@@ -293,7 +312,7 @@
 
         if (result.Data != null && !result.Canceled)
         {
-            
+
             ReturnedLineChart = (QFChart) result.Data;
             var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.chartDataStreamList.Cast<LineChartData>().ToList());
             lineSeriesData.chartTitle = ReturnedLineChart.chartTitle;
@@ -303,13 +322,23 @@
             var chartDetail = new Dictionary<int, ChartPosition>{
                                  { ReturnedLineChart.chartID, new ChartPosition { X = 350, Y = 350 } }
                                 };
-
-            ds.QFChartList.Add(chartDetail);
-            var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
-            if (response.IsSuccessStatusCode)
+            if (chartDetail != null)
             {
-                var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
-                Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+
+                if (ds == null)
+                {
+                    ds = await CreateNewDashboard(chartDetail);
+                }
+                else
+                {
+                    ds.QFChartList.Add(chartDetail);
+                    var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
+                        Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+                    }
+                }
             }
         }
     }
@@ -333,8 +362,16 @@
         }
         else
         {
-                    Navigation.NavigateTo("/managedash");
-                    ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight,Severity.Success);
+            if (ds == null)
+            {
+                ds = await CreateNewDashboard();
+            }
+            else
+            {
+                
+            }
+            Navigation.NavigateTo("/managedash");
+            ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight,Severity.Success);
         }
     }
 
