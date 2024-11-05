@@ -1,0 +1,25 @@
+﻿@page "/displayDashboard"
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@using Quantaflare.Data
+@inject Services.MyChartService myChartService
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+<h1>Welcome to your Dashboard</h1>
+<MudText>@dashboardName@clusterid</MudText>
+
+@code {
+    public string clusterid = string.Empty;
+    public string dashboardName = string.Empty;
+    protected async override Task OnInitializedAsync()
+    {
+        // Get the URI of the current request
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        // Parse the query parameters
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        clusterid = query["clusterid"];
+        dashboardName = query["dashboardName"];
+    }
+}

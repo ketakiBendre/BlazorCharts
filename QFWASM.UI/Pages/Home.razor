@@ -1,7 +1,126 @@
 ﻿@page "/"
+@using Quantaflare.Data
+@inject HttpClient Http
+@inject NavigationManager navManager
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Quantaflare Home!</h1>
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <!--outermost grid -->
 
-Welcome to your new app.
+        <MudItem md="12" sm="12" xs="12">
+            <!--main page left column-->
+
+            <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-0" Elevation="0">
+
+                <MudGrid>
+
+                    <MudItem xs="12" sm="12" md="12">
+                        <MudStack Row="false">
+                            <MudText Typo="Typo.h5">Manage Dashboards </MudText>
+                            <MudText Typo="Typo.subtitle1">Create custom dashboards for different clusters </MudText>
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="4" md="4">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText>Select Clusters</MudText>
+                            <MudSelect T="string" Value="SelectedCluster" Variant="Variant.Outlined" ValueChanged="OnSelectingCluster" AnchorOrigin="Origin.BottomCenter" style="background-color: white;">
+                                @foreach (var cluster in clusters)
+                                {
+                                    <MudSelectItem Value="@cluster.ClusterName">@cluster.ClusterName</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+
+                @if (!string.IsNullOrEmpty(SelectedCluster))
+                {
+                    <MudPaper Elevation="4" class="p-4 mt-4">
+                        <!--new dashboard Grid-->
+                        <MudGrid>
+                            <MudItem xs="8" sm="8" md="8">
+                                <MudText Style="font-weight: bold;">Current Dashboards</MudText>
+                            </MudItem>
+                        </MudGrid>
+
+                        <!-- Data Grid to display Dashboards -->
+                        <div class="mt-6;">
+                            <MudDataGrid T="Dashboard" Items="@dashB" Class="custom-width">
+                                <Columns>
+                                    <PropertyColumn Property="x => x.dashName" Title="Dashboard Name">
+                                        <CellTemplate>
+                                            <MudNavLink Href="@($"/displayDashboard?dashboardName={context.Item.dashName}&clusterid={clusterid}")">
+                                                @context.Item.dashName
+                                            </MudNavLink>
+                                        </CellTemplate>
+                                    </PropertyColumn>
+                                    <PropertyColumn Property="x => x.createdOn" Title="Created On" />
+                                </Columns>
+                                <PagerContent>
+                                    <MudDataGridPager T="Dashboard" />
+                                </PagerContent>
+                            </MudDataGrid>
+                        </div>
+                    </MudPaper>
+                }
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+
+
+
+@code {
+    public string ClusterValue { get; set; } = String.Empty;
+    bool fixedheader = true;
+    private string? SelectedCluster;
+    private IEnumerable<Cluster> clusters = Enumerable.Empty<Cluster>();
+    private IEnumerable<Dashboard> dashB = Enumerable.Empty<Dashboard>();
+    private int clusterid = 1;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var cl = await Http.GetFromJsonAsync<Cluster[]>("api/Dashboard/getCluster");
+        if (cl != null)
+        {
+            clusters = cl;
+            SelectedCluster = "Cluster1";
+            await FetchDashboardsForCluster();
+        }
+    }
+
+    private async Task OnSelectingCluster(string name)
+    {
+        SelectedCluster = name;
+        await FetchDashboardsForCluster();
+    }
+
+    private async Task FetchDashboardsForCluster()
+    {
+        //SelectedCluster = name;
+        var cluster = clusters.FirstOrDefault(e => e.ClusterName == SelectedCluster);
+        if (cluster != null)
+        {
+            var url = $"api/Dashboard/getDashboard?inputId={cluster.ClusterId}";
+            var dBoard = await Http.GetFromJsonAsync<Dashboard[]>(url);
+            if (dBoard != null)
+            {
+                dashB = dBoard;
+            }
+        }
+    }
+
+    private void GoTo(string dashName)
+    {
+        navManager.NavigateTo($"/displayDashboard?dashboardName={dashName}&clusterid={clusterid}");
+    }
+}
+
