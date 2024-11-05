@@ -162,6 +162,28 @@ namespace Quantaflare.API.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("UpdateDashboardName")]
+        public IActionResult UpdateDashboardName(DashboardUpdateRequest dsUpdate)
+        {
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                connection.Open();
+                var sql = "UPDATE dashboard SET dashname= @TextValue,dashtype =@dashtype WHERE clusterid =@clusterId and dashname= @dashName and dashid =@dashid";
+                var parameters = new
+                {
+                    clusterId = dsUpdate.clusterid,
+                    dashName = dsUpdate.dashname,
+                    dashid = dsUpdate.dashid,
+                    TextValue = dsUpdate.TextValue,
+                    dashtype = dsUpdate.dashtype
+                };
+                int rowsAffected = connection.Execute(sql, parameters);
+                return Ok(rowsAffected);
+            }
+        }
+
         [HttpGet]
         [Route("getCluster")]
         public IActionResult getCluster()
@@ -173,6 +195,15 @@ namespace Quantaflare.API.Controllers
                  return Ok(cluster);
                 
             }
+        }
+
+        public class DashboardUpdateRequest
+        {
+            public int clusterid { get; set; }
+            public int dashid { get; set; }
+            public string dashname { get; set; }
+            public string TextValue { get; set; }
+            public string dashtype { get; set; }
         }
 
     }
