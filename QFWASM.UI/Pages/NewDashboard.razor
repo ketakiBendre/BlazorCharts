@@ -12,7 +12,7 @@
 
 <MudContainer MaxWidth="MaxWidth.False">
     <MudGrid>
-        <MudItem md="12" sm="12" xs="12">
+        <MudItem md="12" sm="12" xs="12" >
             <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-0" Elevation="2">
                 <MudGrid>
                      <MudItem xs="12" sm="12" md="12">
@@ -70,7 +70,11 @@
         {
             foreach (var lineChart in lineChartList)
             {
-
+                // If the chart doesn't have a position yet, calculate and assign one
+                if (!chartPositions.ContainsKey(lineChart))
+                {
+                    chartPositions[lineChart] = CalculateNextPosition(); // Assign the next calculated position
+                }
                 var position = chartPositions[lineChart]; // Get the position for the current chart
 
                 <MudItem xs="2" sm="2" md="2">
@@ -126,6 +130,7 @@
     private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, BackdropClick = false};
 
     private bool showLineChart = false;
+    private bool showBarChart = false;
     private int Index { get; set; } = -1; // Default selected index
     private string[] xAxisLabels = new string[0];
     private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
@@ -140,6 +145,15 @@
     private double offsetX;
     private double offsetY;
     private ChartSeriesData draggingChart = new ChartSeriesData();
+
+    private double nextX = 350; // X position for the next chart
+    private double nextY = 350; // Y position for the next chart
+    private const double padding = 20; // Padding between charts
+
+    // Define the chart size (you can make this dynamic as well)
+    private const double chartWidth = 650;
+    private const double chartHeight = 500;
+
 
     protected async override Task OnInitializedAsync()
     {
@@ -161,6 +175,28 @@
             ds = await editDashboard(clusterid, dashboardName);
         }
 
+    }
+
+    private ChartPosition CalculateNextPosition()
+    {
+        // Create the position for the next chart based on the previous chart
+        var position = new ChartPosition
+            {
+                X = nextX,
+                Y = nextY,
+                Width = chartWidth,
+                Height = chartHeight
+            };
+
+        // Update next position for the next chart
+        nextX += chartWidth + padding; // Move next chart to the right
+        if (nextX + chartWidth > 1800) // If the width exceeds screen width (e.g., 1200px), move the next chart to the next row
+        {
+            nextX = 350;
+            nextY += chartHeight + padding; // Move down to the next row
+        }
+
+        return position;
     }
 
     private async Task<Dashboard> CreateNewDashboard()
@@ -316,11 +352,12 @@
             ReturnedLineChart = (QFChart) result.Data;
             var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.chartDataStreamList.Cast<LineChartData>().ToList());
             lineSeriesData.chartTitle = ReturnedLineChart.chartTitle;
-            chartPositions[lineSeriesData] = new ChartPosition { X = 350, Y = 350 };
+            var newChartPos = CalculateNextPosition(); //new ChartPosition { X = 350, Y = 350 };
+            chartPositions[lineSeriesData] = newChartPos;
             lineChartList.Add(lineSeriesData);
             showLineChart = true;
             var chartDetail = new Dictionary<int, ChartPosition>{
-                                 { ReturnedLineChart.chartID, new ChartPosition { X = 350, Y = 350 } }
+                                 { ReturnedLineChart.chartID, newChartPos }
                                 };
             if (chartDetail != null)
             {
@@ -328,6 +365,7 @@
                 if (ds == null)
                 {
                     ds = await CreateNewDashboard(chartDetail);
+
                 }
                 else
                 {
@@ -347,10 +385,11 @@
     {
         var parameters = new DialogParameters()
         {
-            { "Title", "Add Bar Chart" }
+            { "Title", "Add Bar Chart" },
+            {"ClusterId", clusterid}
         };
 
-        return DialogService.ShowAsync<Components.BarChartComponent>("Custom Options Dialog", _maxWidth);
+        return DialogService.ShowAsync<Components.BarChartComponent>("Custom Options Dialog", parameters, _maxWidth);
 
     }
 
