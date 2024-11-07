@@ -6,8 +6,10 @@
 @inject ISnackbar Snackbar
 @inject HttpClient Http
 
-<h1>Welcome to @dashboardName</h1>
 
+ <MudItem xs="12" sm="12" md="12">
+    <h1>Welcome to @dashboardName</h1>
+  </MudItem>
 @if (showLineChart)
 {
     foreach (var lineChart in lineChartList)
