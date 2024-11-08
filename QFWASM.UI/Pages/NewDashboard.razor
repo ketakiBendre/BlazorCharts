@@ -66,6 +66,7 @@
                 </MudGrid>
             </MudPaper>
         </MudItem>
+        <MudGrid>
         @if (showLineChart)
         {
             foreach (var lineChart in lineChartList)
@@ -106,6 +107,7 @@
               </MudItem>
             }
         }
+        </MudGrid>
     </MudGrid>
 </MudContainer>
 
@@ -146,8 +148,8 @@
     private double offsetY;
     private ChartSeriesData draggingChart = new ChartSeriesData();
 
-    private double nextX = 350; // X position for the next chart
-    private double nextY = 350; // Y position for the next chart
+    private double nextX = 290; // X position for the next chart
+    private double nextY = 415; // Y position for the next chart
     private const double padding = 20; // Padding between charts
 
     // Define the chart size (you can make this dynamic as well)
@@ -192,7 +194,7 @@
         nextX += chartWidth + padding; // Move next chart to the right
         if (nextX + chartWidth > 1800) // If the width exceeds screen width (e.g., 1200px), move the next chart to the next row
         {
-            nextX = 350;
+            nextX = 290;
             nextY += chartHeight + padding; // Move down to the next row
         }
 
