@@ -31,6 +31,21 @@
     <Routes @rendermode=RenderMode.InteractiveServer />
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script>
+        window.getWindowSize = () => {
+            return {
+                Width: window.innerWidth,
+                Height: window.innerHeight
+            };
+        };
+    </script>
+    <script>
+        window.onresize = () => {
+            DotNet.invokeMethodAsync('Quantaflare.QFWASM.UI', 'SetInitialChartPositionAndSize');
+        };
+    </script>
+    
+
 </body>
 
 </html>

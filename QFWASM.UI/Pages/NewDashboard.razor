@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 
 <PageTitle>New Unit Dashboard</PageTitle>
@@ -92,7 +93,7 @@
                                   XAxisLabels="@lineChart.xAxisLabels"
                                   Width="100%"
                                   Height="350px"
-                                  ChartOptions="@options" />
+                                          ChartOptions="@options"/>
 
                         <MudGrid>
                             @*<MudItem xs="6"> // Need to maintain seprate index for each chart, commenting now
@@ -148,14 +149,17 @@
     private double offsetY;
     private ChartSeriesData draggingChart = new ChartSeriesData();
 
-    private double nextX = 290; // X position for the next chart
-    private double nextY = 415; // Y position for the next chart
+    private double nextX; // X position for the next chart
+    private double nextY; // Y position for the next chart
     private const double padding = 20; // Padding between charts
+    private double chartWidth;  // Chart width
+    private double chartHeight; // Chart height
 
-    // Define the chart size (you can make this dynamic as well)
-    private const double chartWidth = 650;
-    private const double chartHeight = 500;
+    private double maxWidth; // Maximum width for a row (container or viewport width)
+    private double availableWidth; // Available width to fit the charts in a row
 
+    private WindowSize windowSize=new WindowSize();
+    private bool _chartsRendered;
 
     protected async override Task OnInitializedAsync()
     {
@@ -165,7 +169,7 @@
         // Parse the query parameters
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         clusterid = query["clusterid"]; 
-
+        await SetInitialChartPositionAndSize();
         if (Mode == "new")
         {
             //Set Default name to new dashboard
@@ -179,9 +183,36 @@
 
     }
 
+    private async Task SetInitialChartPositionAndSize()
+    {
+        // Get container size or viewport size using JSInterop
+        windowSize = await GetWindowSize();
+
+        // Set maximum width for charts based on the available width (e.g., 80% of the container width)
+        availableWidth = windowSize.Width * 0.8;
+
+        // Dynamically calculate initial positions based on container size
+        nextX = windowSize.Width * 0.1; // Set 9% of window width as initial X position
+        nextY = windowSize.Height * 0.24; // Set 10% of window height as initial Y position
+        
+        // Dynamically calculate chart size based on available space
+        chartWidth = availableWidth / 4;  // Set chart width to fit 3 charts per row
+        chartHeight = windowSize.Height * 0.3; // Set chart height as 30% of window height
+
+        // Set the max width for the row to fit the available space
+        maxWidth = availableWidth;
+    }
+
+    private async Task<WindowSize> GetWindowSize()
+    {
+        // Get window size via JSInterop
+        return await JSRuntime.InvokeAsync<WindowSize>("getWindowSize");
+    }
+
     private ChartPosition CalculateNextPosition()
     {
-        // Create the position for the next chart based on the previous chart
+
+        // Create the position for the next chart based on the current X, Y
         var position = new ChartPosition
             {
                 X = nextX,
@@ -192,10 +223,12 @@
 
         // Update next position for the next chart
         nextX += chartWidth + padding; // Move next chart to the right
-        if (nextX + chartWidth > 1800) // If the width exceeds screen width (e.g., 1200px), move the next chart to the next row
+
+        // If nextX exceeds the available width, move to the next row
+        if (nextX  > maxWidth) // Dynamically check if we exceed the max width
         {
-            nextX = 290;
-            nextY += chartHeight + padding; // Move down to the next row
+            nextX = windowSize.Width * 0.1; // Reset X to the starting point (5% of the container width)
+            nextY += chartHeight + padding; // Move down to the next row (add padding for spacing)
         }
 
         return position;
@@ -482,4 +515,9 @@
         Snackbar.Add(message, sev, c => c.SnackbarVariant = Variant.Outlined);
     }
     
+    public class WindowSize
+    {
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
 }
