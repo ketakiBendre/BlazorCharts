@@ -13,8 +13,10 @@
 
 <MudContainer MaxWidth="MaxWidth.False">
     <MudGrid>
-        <MudItem md="12" sm="12" xs="12" >
-            <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-0" Elevation="2">
+        <MudItem md="12" sm="12" xs="12">
+            <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-5
+
+" Elevation="2">
                 <MudGrid>
                      <MudItem xs="12" sm="12" md="12">
                             <MudStack Row = "false">
@@ -67,48 +69,49 @@
                 </MudGrid>
             </MudPaper>
         </MudItem>
-        <MudGrid>
+       
         @if (showLineChart)
         {
-            foreach (var lineChart in lineChartList)
-            {
-                // If the chart doesn't have a position yet, calculate and assign one
-                if (!chartPositions.ContainsKey(lineChart))
-                {
-                    chartPositions[lineChart] = CalculateNextPosition(); // Assign the next calculated position
-                }
-                var position = chartPositions[lineChart]; // Get the position for the current chart
+            <MudGrid>
+            <MudItem xs="12">
+                <MudGrid Justify="justification">
+                    @for (int i=0;i<lineChartList.Count;i++)
+                    {
+                            int localindex = i;
+                            var lineChart = lineChartList[i];
+                            <MudItem xs="@breaks[localindex]">
+                                <MudPaper Class="d-flex flex-column align-center justify-center mud-width-full py-8">
+                                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
+                                        <MudChart ChartType="ChartType.Line"
+                                                  ChartSeries="@lineChart.series"
+                                                  @bind-SelectedIndex="Index"
+                                                  XAxisLabels="@lineChart.xAxisLabels"
+                                                  Width="100%"
+                                                  Height="350px"
+                                                  ChartOptions="@options" />
 
-                <MudItem xs="2" sm="2" md="2">
-                    <MudPaper @onmousedown="(e) => OnMouseDown(e, lineChart)"
-                              @onmouseup="OnMouseUp"
-                              @onmousemove="OnMouseMove"
-                              style="@($"position: absolute; left: {position.X}px; top: {position.Y}px; cursor: move;")"
-                              Elevation="4">
-                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
-                    <div>
-                        <MudChart ChartType="ChartType.Line"
-                                  ChartSeries="@lineChart.series"
-                                  @bind-SelectedIndex="Index"
-                                  XAxisLabels="@lineChart.xAxisLabels"
-                                  Width="100%"
-                                  Height="350px"
-                                          ChartOptions="@options"/>
-
-                        <MudGrid>
-                            @*<MudItem xs="6"> // Need to maintain seprate index for each chart, commenting now
-                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : lineChart.series[Index].Name)</MudText>
-                            </MudItem>*@
-                            <MudItem xs="6">
-                                <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
-                            </MudItem>
-                        </MudGrid>
-                    </div>
-                </MudPaper>
-              </MudItem>
-            }
+                                        <MudGrid>
+                                            @*<MudItem xs="6"> // Need to maintain seprate index for each chart, commenting now
+                                    <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : lineChart.series[Index].Name)</MudText>
+                                    </MudItem>*@
+                                            <MudItem xs="6">
+                                                <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
+                                            </MudItem>
+                                        </MudGrid>
+                                    <MudGrid>
+                                        <MudContainer Style="text-align: right;">
+                                            <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="(()=>UpdateBreaks(localindex,-1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="(()=>UpdateBreaks(localindex,1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" />
+                                        </MudContainer>
+                                    </MudGrid>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                 </MudGrid>
+            </MudItem>
+          </MudGrid>
         }
-        </MudGrid>
+        
     </MudGrid>
 </MudContainer>
 
@@ -145,6 +148,7 @@
 
     private Dictionary<ChartSeriesData, ChartPosition> chartPositions = new Dictionary<ChartSeriesData, ChartPosition>();
     private bool isDragging = false;
+    private int initialX, initialY;
     private double offsetX;
     private double offsetY;
     private ChartSeriesData draggingChart = new ChartSeriesData();
@@ -159,7 +163,12 @@
     private double availableWidth; // Available width to fit the charts in a row
 
     private WindowSize windowSize=new WindowSize();
-    private bool _chartsRendered;
+    int[] breaks = new int[10] { 3, 4, 2, 3, 3, 2, 4,3,2,4 };
+    int _papers = 0;
+    int papers { get { return _papers; } set { UpdatePapers(value); } }
+
+    Justify justification = Justify.FlexStart;
+
 
     protected async override Task OnInitializedAsync()
     {
@@ -194,7 +203,7 @@
         // Dynamically calculate initial positions based on container size
         nextX = windowSize.Width * 0.1; // Set 9% of window width as initial X position
         nextY = windowSize.Height * 0.24; // Set 10% of window height as initial Y position
-        
+
         // Dynamically calculate chart size based on available space
         chartWidth = availableWidth / 4;  // Set chart width to fit 3 charts per row
         chartHeight = windowSize.Height * 0.3; // Set chart height as 30% of window height
@@ -233,6 +242,39 @@
 
         return position;
     }
+
+
+    void UpdatePapers(int value)
+    {
+
+        int[] newbreaks = Enumerable.Repeat(3, value).ToArray();
+
+        for (int i = 0; i < newbreaks.Length; i++)
+        {
+            if (i < breaks.Length)
+            {
+                newbreaks[i] = breaks[i];
+            }
+        }
+
+        breaks = newbreaks;
+
+        _papers = value;
+
+        StateHasChanged();
+    }
+
+    void UpdateBreaks(int index,int changeamount)
+    {
+        List<int> newbreaks = breaks.ToList();
+        if (newbreaks[index] + changeamount > 12 || newbreaks[index] + changeamount < 1) return; //don't go above 12 or below 1
+        newbreaks[index] += changeamount;
+
+        breaks = newbreaks.ToArray();
+
+        StateHasChanged();
+    }
+
 
     private async Task<Dashboard> CreateNewDashboard()
     {
@@ -390,6 +432,7 @@
             var newChartPos = CalculateNextPosition(); //new ChartPosition { X = 350, Y = 350 };
             chartPositions[lineSeriesData] = newChartPos;
             lineChartList.Add(lineSeriesData);
+            _papers = lineChartList.Count;
             showLineChart = true;
             var chartDetail = new Dictionary<int, ChartPosition>{
                                  { ReturnedLineChart.chartID, newChartPos }
@@ -484,10 +527,8 @@
     private void OnMouseDown(MouseEventArgs e, ChartSeriesData chart)
     {
         isDragging = true;
-        draggingChart = chart;
-        var position = chartPositions[chart];
-        offsetX = e.ClientX - position.X;
-        offsetY = e.ClientY - position.Y;
+        initialX = (int)e.ClientX;
+        initialY = (int)e.ClientY;
     }
 
     private void OnMouseUp()
@@ -500,9 +541,11 @@
     {
         if (isDragging && draggingChart != null)
         {
-            var position = chartPositions[draggingChart];
+            /*var position = chartPositions[draggingChart];
             position.X = e.ClientX - offsetX;
-            position.Y = e.ClientY - offsetY;
+            position.Y = e.ClientY - offsetY;*/
+            offsetX = (int)e.ClientX - initialX;
+            offsetY = (int)e.ClientY - initialY;
             StateHasChanged(); // Refresh the UI
         }
     }
