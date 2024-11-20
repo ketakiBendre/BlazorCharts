@@ -31,6 +31,7 @@
     <Routes @rendermode=RenderMode.InteractiveServer />
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="js/sortable.js"></script>
     <script>
         window.getWindowSize = () => {
             return {
@@ -44,7 +45,17 @@
             DotNet.invokeMethodAsync('Quantaflare.QFWASM.UI', 'SetInitialChartPositionAndSize');
         };
     </script>
-    
+    <script>
+        window.getElementPosition = (id) => {
+            var element = document.getElementById(id);
+            if (element) {
+                var rect = element.getBoundingClientRect();
+                return { x: rect.left, y: rect.top };
+            }
+            return { x: 0, y: 0 }; // Default position if element not found
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 
 </body>
 
