@@ -79,7 +79,7 @@
                     {
                             int localindex = i;
                             var lineChart = lineChartList[i];
-                            <MudItem xs="@breaks[localindex]">
+                            <MudItem xs="@breaks[localindex]" data-item-id="@lineChart.chartId">
                                 <MudPaper>
                                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
                                         <MudChart ChartType="ChartType.Line"
@@ -168,6 +168,7 @@
     int papers { get { return _papers; } set { UpdatePapers(value); } }
 
     Justify justification = Justify.FlexStart;
+    public bool reOrdered = false;
 
 
     protected async override Task OnInitializedAsync()
@@ -179,6 +180,7 @@
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         clusterid = query["clusterid"]; 
         await SetInitialChartPositionAndSize();
+        reOrdered = false;
         if (Mode == "new")
         {
             //Set Default name to new dashboard
@@ -198,16 +200,24 @@
         {
             await JSRuntime.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
         }
+
+
     }
 
     [JSInvokable]
-    public void OnUpdateJS(int oldIndex, int newIndex)
+    public void OnListReordered(List<string> updatedIds)
     {
-        var item = lineChartList[oldIndex];
-        lineChartList.RemoveAt(oldIndex);
-        lineChartList.Insert(newIndex, item);
+        lineChartList = lineChartList.OrderBy(item => updatedIds.IndexOf(item.chartId.ToString())).ToList();
+        reOrdered = true;
+        // Print updated lineChartList to the console (server-side)
+        foreach (var item in lineChartList)
+        {
+            Console.WriteLine($"Chart ID: {item.chartId}, Chart Title: {item.chartTitle}");
+        }
         StateHasChanged();
     }
+
+
 
     private async Task SetInitialChartPositionAndSize()
     {
@@ -313,7 +323,7 @@
         return newDash;
     }
 
-    private async Task<Dashboard> CreateNewDashboard(Dictionary<int, ChartPosition> chartDetail)
+    private async Task<Dashboard> CreateNewDashboard(Dictionary<int, int> chartDetail)
     {
 
         var newDash = new Dashboard();
@@ -354,7 +364,7 @@
                     foreach (var kvp in chart)
                     {
                         chartIdList.Add(kvp.Key);
-                        ChartPosition position = kvp.Value;
+                      //  ChartPosition position = kvp.Value;
                     }
                 }
                 var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
@@ -370,13 +380,13 @@
                                 showLineChart = true;
                                 var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                 lineSeriesData.chartTitle = dashboard_chart.chartTitle;
-                                var chartPosition = oldDash.QFChartList.SelectMany(chartDict => chartDict)
-                                                             .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;
+                               /* var chartPosition = oldDash.QFChartList.SelectMany(chartDict => chartDict)
+                                                             .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;*/
                                 lineChartList.Add(lineSeriesData);
-                                if (chartPosition != null)
+                                /*if (chartPosition != null)
                                 {
                                     chartPositions[lineSeriesData] = chartPosition;
-                                }
+                                }*/
                             }
                         }
                     }
@@ -446,14 +456,13 @@
             ReturnedLineChart = (QFChart) result.Data;
             var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.chartDataStreamList.Cast<LineChartData>().ToList());
             lineSeriesData.chartTitle = ReturnedLineChart.chartTitle;
-            var newChartPos = CalculateNextPosition(); //new ChartPosition { X = 350, Y = 350 };
-            chartPositions[lineSeriesData] = newChartPos;
+            lineSeriesData.chartId = ReturnedLineChart.chartID;
             lineChartList.Add(lineSeriesData);
             StateHasChanged();
             _papers = lineChartList.Count;
             showLineChart = true;
-            var chartDetail = new Dictionary<int, ChartPosition>{
-                                 { ReturnedLineChart.chartID, newChartPos }
+            var chartDetail = new Dictionary<int, int>{
+                                 { ReturnedLineChart.chartID, 3 }
                                 };
             if (chartDetail != null)
             {
@@ -505,7 +514,7 @@
                     ShowAlert("Failed in New Dashboard Creation !!", Defaults.Classes.Position.BottomRight, Severity.Error);
                 }
             }
-            else
+            else if(!reOrdered)
             {
                 if (TextValue != ds.dashName || Dense_Radio != ((ds.dashType == "Unit Dashboard")? true:false))
                 {
@@ -525,6 +534,25 @@
                         Console.WriteLine($"Received Cluster ID: {rowsAffected}");
                     }
                 }
+
+            }
+            else
+            {
+                ds.QFChartList.Clear();
+
+                foreach(var newChart in lineChartList)
+                {
+                    var chartDetail = new Dictionary<int, int>{
+                                 { newChart.chartId, 3 }
+                                };
+                    ds.QFChartList.Add(chartDetail);
+                }
+                var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
+                if (response.IsSuccessStatusCode)
+                {
+                    var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
+                    Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+                }
             }
             Navigation.NavigateTo("/managedash");
         }
@@ -542,32 +570,7 @@
         }
     }
 
-    private void OnMouseDown(MouseEventArgs e, ChartSeriesData chart)
-    {
-        isDragging = true;
-        initialX = (int)e.ClientX;
-        initialY = (int)e.ClientY;
-    }
-
-    private void OnMouseUp()
-    {
-        isDragging = false;
-        draggingChart = null; // Clear the dragging chart
-    }
-
-    private void OnMouseMove(MouseEventArgs e)
-    {
-        if (isDragging && draggingChart != null)
-        {
-            /*var position = chartPositions[draggingChart];
-            position.X = e.ClientX - offsetX;
-            position.Y = e.ClientY - offsetY;*/
-            offsetX = (int)e.ClientX - initialX;
-            offsetY = (int)e.ClientY - initialY;
-            StateHasChanged(); // Refresh the UI
-        }
-    }
-
+    
 
     void ShowAlert(string message, string position,Severity sev)
     {

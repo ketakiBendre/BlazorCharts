@@ -98,7 +98,7 @@
                     foreach (var kvp in chart)
                     {
                         chartIdList.Add(kvp.Key);
-                        ChartPosition position = kvp.Value;
+                       // ChartPosition position = kvp.Value;
                     }
                 }
                 var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
@@ -114,13 +114,13 @@
                                 showLineChart = true;
                                 var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                 lineSeriesData.chartTitle = dashboard_chart.chartTitle;
-                                var chartPosition = oldDash.QFChartList.SelectMany(chartDict => chartDict)
-                                                             .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;
+                               // var chartPosition = oldDash.QFChartList.SelectMany(chartDict => chartDict)
+                                  //                           .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;
                                 lineChartList.Add(lineSeriesData);
-                                if (chartPosition != null)
+                               /* if (chartPosition != null)
                                 {
                                     chartPositions[lineSeriesData] = chartPosition;
-                                }
+                                }*/
                             }
                         }
                     }

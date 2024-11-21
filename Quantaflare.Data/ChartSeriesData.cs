@@ -9,6 +9,7 @@ namespace Quantaflare.Data
 {
     public class ChartSeriesData
     {
+        public int chartId {  get; set; }
         public string chartTitle { get; set; }
         public string[] xAxisLabels;
 
