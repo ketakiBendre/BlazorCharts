@@ -146,6 +146,7 @@
     private Dashboard ds;
     private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
     int[] breaks = new int[10] { 3, 4, 2, 3, 3, 2, 4,3,2,4 };
+
     int _papers = 0;
     int papers { get { return _papers; } set { UpdatePapers(value); } }
     public bool reOrdered = false;
@@ -184,9 +185,34 @@
     [JSInvokable]
     public void OnListReordered(List<string> updatedIds)
     {
+        // Store the current mapping of chart IDs to breaks
+        var breaksMap = lineChartList
+            .Select((chart, index) => new { chart.chartId, BreakValue = breaks[index] })
+            .ToDictionary(item => item.chartId, item => item.BreakValue);
+
         lineChartList = lineChartList.OrderBy(item => updatedIds.IndexOf(item.chartId.ToString())).ToList();
         reOrdered = true;
+
         // Print updated lineChartList to the console (server-side)
+        foreach (var item in lineChartList)
+        {
+            Console.WriteLine($"Chart ID: {item.chartId}, Chart Title: {item.chartTitle}");
+        }
+
+        // Update breaks array based on the new order of chart IDs
+        var reorderBreaks = lineChartList
+            .Select(chart => breaksMap[chart.chartId])
+            .ToArray();
+        for (int i = 0; i < reorderBreaks.Length; i++)
+        {
+            if (i < breaks.Length)
+            {
+                breaks[i] = reorderBreaks[i]; // Update breaks with reordered values
+            }
+        }
+
+        Console.WriteLine("Updated Breaks: " + string.Join(", ", breaks));
+        Console.WriteLine("after updating breaks:");
         foreach (var item in lineChartList)
         {
             Console.WriteLine($"Chart ID: {item.chartId}, Chart Title: {item.chartTitle}");
@@ -283,21 +309,26 @@
             if (oldDash.QFChartList != null)
             {
                 List<int> chartIdList = new List<int>();
+                List<int> oldBreaks = new List<int>();
                 foreach (var chart in oldDash.QFChartList)
                 {
                     foreach (var kvp in chart)
                     {
                         chartIdList.Add(kvp.Key);
+                        oldBreaks.Add(kvp.Value);
                     }
                 }
 
-               
+                for (int i = 0; i < oldBreaks.Count; i++)
+                {
+                    if (i < breaks.Length)
+                    {
+                        breaks[i] = oldBreaks[i]; // Update breaks with reordered values
+                    }
+                }
+                Console.WriteLine("Current Breaks: " + string.Join(", ", breaks));
                 var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
                 try
-
-
-
-
                 {
                     var dashboard_qfChartList = await Http.GetFromJsonAsync<QFChart[]>(url_QFChart);
                     if (dashboard_qfChartList != null)
@@ -309,13 +340,14 @@
 
                         foreach (var dashboard_chart in orderedCharts)
                         {
+                            
                             Console.WriteLine($" dashboard charts:{dashboard_chart.chartTitle}");
                             if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
                             {
                                 showLineChart = true;
                                 var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                 lineSeriesData.chartTitle = dashboard_chart.chartTitle;
-                                
+
                                 lineChartList.Add(lineSeriesData);
                             }
                         }
