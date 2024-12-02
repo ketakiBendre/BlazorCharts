@@ -150,7 +150,7 @@
     int _papers = 0;
     int papers { get { return _papers; } set { UpdatePapers(value); } }
     public bool reOrdered = false;
-
+    public bool updatebrk = false;
 
     protected async override Task OnInitializedAsync()
     {
@@ -161,6 +161,7 @@
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         clusterid = query["clusterid"]; 
         reOrdered = false;
+        updatebrk = false;
         if (Mode == "new")
         {
             //Set Default name to new dashboard
@@ -248,7 +249,7 @@
         newbreaks[index] += changeamount;
 
         breaks = newbreaks.ToArray();
-
+        updatebrk = true;
         StateHasChanged();
     }
 
@@ -340,14 +341,14 @@
 
                         foreach (var dashboard_chart in orderedCharts)
                         {
-                            
+
                             Console.WriteLine($" dashboard charts:{dashboard_chart.chartTitle}");
                             if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
                             {
                                 showLineChart = true;
                                 var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                 lineSeriesData.chartTitle = dashboard_chart.chartTitle;
-
+                                lineSeriesData.chartId = dashboard_chart.chartID;
                                 lineChartList.Add(lineSeriesData);
                             }
                         }
@@ -476,7 +477,7 @@
                     ShowAlert("Failed in New Dashboard Creation !!", Defaults.Classes.Position.BottomRight, Severity.Error);
                 }
             }
-            else if(!reOrdered)
+            else if (!reOrdered && !updatebrk)
             {
                 if (TextValue != ds.dashName || Dense_Radio != ((ds.dashType == "Unit Dashboard")? true:false))
                 {
@@ -497,6 +498,22 @@
                     }
                 }
 
+            }
+            else if (updatebrk && !reOrdered)
+            {
+                for (int iChart = 0; iChart < ds.QFChartList.Count; iChart++)
+                {
+                    if (iChart < lineChartList.Count && ds.QFChartList[iChart].ContainsKey(lineChartList[iChart].chartId))
+                    {
+                        ds.QFChartList[iChart][lineChartList[iChart].chartId] = breaks[iChart];
+                    }
+                }
+                var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
+                if (response.IsSuccessStatusCode)
+                {
+                    var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
+                    Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+                }
             }
             else
             {

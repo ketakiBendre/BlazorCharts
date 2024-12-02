@@ -11,8 +11,8 @@ namespace Quantaflare.Data
     {
         public int chartId {  get; set; }
         public string chartTitle { get; set; }
-        public string[] xAxisLabels;
+        public string[] xAxisLabels = Array.Empty<string>();
 
-        public List<MudBlazor.ChartSeries> series;
+        public List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
     }
 }
