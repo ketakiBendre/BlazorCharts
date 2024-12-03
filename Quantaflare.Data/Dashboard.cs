@@ -9,7 +9,7 @@ namespace Quantaflare.Data
 {
     public class Dashboard
     {
-        public int? dashid { get; set; }
+        public int dashid { get; set; }
         public int? clusterId { get; set; }
         public DateTime createdOn { get; set; }
        

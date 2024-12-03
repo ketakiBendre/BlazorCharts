@@ -79,7 +79,11 @@
                     {
                             int localindex = i;
                             var lineChart = lineChartList[i];
-                            <MudItem xs="@breaks[localindex]" data-item-id="@lineChart.chartId">
+                            var chartData = ds.QFChartList[i];
+                            var chartId = chartData.Keys.First(); // Assuming one chart per dictionary
+                            var chartBreak = chartData[chartId];
+
+                            <MudItem xs="@chartBreak" data-item-id="@lineChart.chartId">
                                 <MudPaper>
                                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
                                         <MudChart ChartType="ChartType.Line"
@@ -100,8 +104,8 @@
                                         </MudGrid>
                                     <MudGrid>
                                         <MudContainer Style="text-align: right;">
-                                            <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="(()=>UpdateBreaks(localindex,-1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" />
-                                            <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="(()=>UpdateBreaks(localindex,1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, -1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, 1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" />
                                         </MudContainer>
                                     </MudGrid>
                             </MudPaper>
@@ -148,7 +152,7 @@
     int[] breaks = new int[10] { 3, 4, 2, 3, 3, 2, 4,3,2,4 };
 
     int _papers = 0;
-    int papers { get { return _papers; } set { UpdatePapers(value); } }
+    int papers { get { return _papers; } set { UpdatePapers(value,12); } }
     public bool reOrdered = false;
     public bool updatebrk = false;
 
@@ -186,70 +190,111 @@
     [JSInvokable]
     public void OnListReordered(List<string> updatedIds)
     {
-        // Store the current mapping of chart IDs to breaks
-        var breaksMap = lineChartList
-            .Select((chart, index) => new { chart.chartId, BreakValue = breaks[index] })
-            .ToDictionary(item => item.chartId, item => item.BreakValue);
+        if (ds == null || ds.QFChartList == null) return;
 
-        lineChartList = lineChartList.OrderBy(item => updatedIds.IndexOf(item.chartId.ToString())).ToList();
+        // Flatten QFChartList into a list of chart data (chartId, break value) while preserving order
+        var chartDataList = ds.QFChartList
+            .SelectMany(chartData => chartData.Select(kvp => new { ChartId = kvp.Key, BreakValue = kvp.Value }))
+            .ToList();
+
+        // Create a mapping of chart IDs to their corresponding chart data
+        var chartDataMap = chartDataList.ToDictionary(item => item.ChartId);
+
+        // Reorder lineChartList based on the new order in updatedIds
+        lineChartList = lineChartList
+            .OrderBy(item => updatedIds.IndexOf(item.chartId.ToString()))
+            .ToList();
+
         reOrdered = true;
 
-        // Print updated lineChartList to the console (server-side)
+        // Reconstruct QFChartList with the reordered chart data
+        var newQFChartList = new List<Dictionary<int, int>>();
+
+        foreach (var chart in lineChartList)
+        {
+            var chartId = chart.chartId;
+
+            // Find the corresponding break value for the chart ID
+            if (chartDataMap.TryGetValue(chartId, out var chartInfo))
+            {
+                // Add the reordered chart data to the new QFChartList
+                newQFChartList.Add(new Dictionary<int, int>
+            {
+                { chartId, chartInfo.BreakValue }
+            });
+            }
+        }
+
+        // Replace the old QFChartList with the reordered one
+        ds.QFChartList = newQFChartList;
+
+        // Debug: Print updated lineChartList and QFChartList for verification
+        Console.WriteLine("Updated Line Chart List:");
         foreach (var item in lineChartList)
         {
             Console.WriteLine($"Chart ID: {item.chartId}, Chart Title: {item.chartTitle}");
         }
 
-        // Update breaks array based on the new order of chart IDs
-        var reorderBreaks = lineChartList
-            .Select(chart => breaksMap[chart.chartId])
-            .ToArray();
-        for (int i = 0; i < reorderBreaks.Length; i++)
+        Console.WriteLine("Updated QFChartList:");
+        foreach (var chartData in ds.QFChartList)
         {
-            if (i < breaks.Length)
+            foreach (var kvp in chartData)
             {
-                breaks[i] = reorderBreaks[i]; // Update breaks with reordered values
+                Console.WriteLine($"Chart ID: {kvp.Key}, Break Value: {kvp.Value}");
             }
         }
 
-        Console.WriteLine("Updated Breaks: " + string.Join(", ", breaks));
-        Console.WriteLine("after updating breaks:");
-        foreach (var item in lineChartList)
-        {
-            Console.WriteLine($"Chart ID: {item.chartId}, Chart Title: {item.chartTitle}");
-        }
         StateHasChanged();
     }
 
 
-    void UpdatePapers(int value)
+
+    void UpdateBreaks(int dashboardId, int chartIndex, int changeAmount)
     {
+        if (ds == null || ds.dashid != dashboardId) return;
 
-        int[] newbreaks = Enumerable.Repeat(3, value).ToArray();
+        // Ensure the chartIndex is valid
+        if (chartIndex >= ds.QFChartList.Count) return;
 
-        for (int i = 0; i < newbreaks.Length; i++)
+        var chartData = ds.QFChartList[chartIndex];
+
+        // Get the chart ID and update its break value
+        foreach (var chartId in chartData.Keys.ToList()) // Iterate keys
         {
-            if (i < breaks.Length)
-            {
-                newbreaks[i] = breaks[i];
-            }
+            var currentBreak = chartData[chartId];
+            var newBreak = currentBreak + changeAmount;
+
+            // Ensure the break value stays within bounds
+            if (newBreak > 12 || newBreak < 1) return;
+
+            // Update the break value
+            chartData[chartId] = newBreak;
+
+            // Persist the change back to the `QFChartList`
+            ds.QFChartList[chartIndex] = chartData;
+            updatebrk = true;
+            StateHasChanged();
         }
-
-        breaks = newbreaks;
-
-        _papers = value;
-
-        StateHasChanged();
     }
 
-    void UpdateBreaks(int index,int changeamount)
+    void UpdatePapers(int dashboardId, int chartCount)
     {
-        List<int> newbreaks = breaks.ToList();
-        if (newbreaks[index] + changeamount > 12 || newbreaks[index] + changeamount < 1) return; //don't go above 12 or below 1
-        newbreaks[index] += changeamount;
+        if (ds == null || ds.dashid != dashboardId) return;
 
-        breaks = newbreaks.ToArray();
-        updatebrk = true;
+        // Adjust the number of charts in QFChartList
+        while (ds.QFChartList.Count < chartCount)
+        {
+            // Add new chart with default break value of 3
+            ds.QFChartList.Add(new Dictionary<int, int> { { 0, 3 } });
+        }
+
+        while (ds.QFChartList.Count > chartCount)
+        {
+            // Remove excess charts
+            ds.QFChartList.RemoveAt(ds.QFChartList.Count - 1);
+        }
+
+
         StateHasChanged();
     }
 
@@ -421,9 +466,9 @@
             lineSeriesData.chartTitle = ReturnedLineChart.chartTitle;
             lineSeriesData.chartId = ReturnedLineChart.chartID;
             lineChartList.Add(lineSeriesData);
-            StateHasChanged();
+            
             _papers = lineChartList.Count;
-            showLineChart = true;
+            
             var chartDetail = new Dictionary<int, int>{
                                  { ReturnedLineChart.chartID, breaks[lineChartList.Count-1] }
                                 };
@@ -445,6 +490,8 @@
                         Console.WriteLine($"Received Cluster ID: {rowsAffected}");
                     }
                 }
+                showLineChart = true;
+                StateHasChanged();
             }
         }
     }
@@ -501,13 +548,7 @@
             }
             else if (updatebrk && !reOrdered)
             {
-                for (int iChart = 0; iChart < ds.QFChartList.Count; iChart++)
-                {
-                    if (iChart < lineChartList.Count && ds.QFChartList[iChart].ContainsKey(lineChartList[iChart].chartId))
-                    {
-                        ds.QFChartList[iChart][lineChartList[iChart].chartId] = breaks[iChart];
-                    }
-                }
+                
                 var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
                 if (response.IsSuccessStatusCode)
                 {
@@ -517,15 +558,6 @@
             }
             else
             {
-                ds.QFChartList.Clear();
-                for(int iChart=0; iChart< lineChartList.Count; iChart++)
-                {
-                        var newChart = lineChartList[iChart];
-                        var chartDetail = new Dictionary<int, int>{
-                                 { newChart.chartId, breaks[iChart] }
-                                };
-                    ds.QFChartList.Add(chartDetail);
-                }
                 var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
                 if (response.IsSuccessStatusCode)
                 {
@@ -537,18 +569,7 @@
         }
     }
 
-    private void Edit()
-    {
-        if (string.IsNullOrEmpty(TextValue))
-        {
-            ShowAlert("Please Enter Dashboard name before saving !!", Defaults.Classes.Position.BottomRight,Severity.Error);
-        }
-        else
-        {
-            ShowAlert("Dashboard saved !!", Defaults.Classes.Position.BottomRight, Severity.Success);
-        }
-    }
-
+    
     
 
     void ShowAlert(string message, string position,Severity sev)
