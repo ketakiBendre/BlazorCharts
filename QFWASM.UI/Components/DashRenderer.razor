@@ -1,0 +1,246 @@
+﻿@inherits MudComponentBase
+
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@using Quantaflare.Data
+@inject Services.MyChartService myChartService
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+@* page common injects*@
+@inject NavigationManager _navigationManager
+
+<MudElement @attributes="@UserAttributes"  Style="@Style">
+
+    <MudGrid>
+        <!--outermost grid -->
+
+        <MudItem md="12" sm="12" xs="12">
+            <!--main page left column-->
+            <MudPaper Class="pa-2" Elevation="0">
+                <MudGrid>
+                    <!--2nd Row for the Data grid-->
+                    @if (IsProcessing)
+                    {
+                        <MudItem xs="12" sm="12" md="12">
+                            <MudText>Loading....</MudText>
+                        </MudItem>
+                    }
+                    else if (_error != null)
+                    {
+                        <MudItem xs="12" sm="12" md="12">
+                            @* <ErrorDisplay Error="_error" /> *@
+                            There is an error loading.....
+                        </MudItem>
+                    }
+                    else if (true)
+                    {
+                        <MudItem xs="12" sm="12" md="12">
+                            <h1>Welcome to @dashboardName</h1>
+                            <h1>Clusterid @clusterid</h1>
+                        </MudItem>
+                        @if (showLineChart)
+                        {
+                            foreach (var lineChart in lineChartList)
+                            {
+                                var position = chartPositions[lineChart]; // Get the position for the current chart
+
+                                <MudItem xs="2" sm="2" md="2">
+                                    <MudPaper @onmousedown="(e) => OnMouseDown(e, lineChart)"
+                                              @onmouseup="OnMouseUp"
+                                              @onmousemove="OnMouseMove"
+                                              style="@($"position: absolute; left: {position.X}px; top: {position.Y}px; cursor: move;")"
+                                              Elevation="4">
+                                        <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
+                                        <div>
+                                            <MudChart ChartType="ChartType.Line"
+                                                      ChartSeries="@lineChart.series"
+                                                      @bind-SelectedIndex="Index"
+                                                      XAxisLabels="@lineChart.xAxisLabels"
+                                                      Width="100%"
+                                                      Height="350px"
+                                                      ChartOptions="@options" />
+
+                                            <MudGrid>
+                                                @*<MudItem xs="6"> // Need to maintain seprate index for each chart, commenting now
+                                        <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : lineChart.series[Index].Name)</MudText>
+                                        </MudItem>*@
+                                                <MudItem xs="6">
+                                                    <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </div>
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                        }
+                    }
+             
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+
+    <style>
+        .BlurBKG {
+            backdrop-filter: blur(10px);
+        }
+
+    </style>
+
+</MudElement>
+
+@code
+{
+
+    // private string Classname =>
+    // new CssBuilder()
+    // .AddClass(Class)
+    // .Build();
+
+    //parameter set by parent compo
+
+    //what is the cluster
+    [Parameter]
+    public string  ClusterId_p { get; set; } //change this to int later
+    [Parameter]
+    public int OrgId_p { get; set; }
+    [Parameter]
+    public int UnitId_p { get; set; }
+    [Parameter]
+    public int ProductId_p { get; set; }
+    [Parameter]
+    public int DashboardId_p { get; set; }
+    [Parameter]
+    public string DashboardName_p { get; set; }  //to be removed 
+
+
+
+    public bool IsProcessing { get; set; } = false; //for showing the wait
+    public string _error { get; set; }
+
+
+    //on page load
+    public string clusterid = string.Empty;
+    public string dashboardName = string.Empty;
+    public bool Dense_Radio { get; set; } = true;
+    private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, BackdropClick = false };
+
+    private bool showLineChart = false;
+    private int Index { get; set; } = -1; // Default selected index
+    private string[] xAxisLabels = new string[0];
+    private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
+    private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
+
+    private QFChart ReturnedLineChart = new QFChart();
+    private Dashboard ds;
+    private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
+
+    private Dictionary<ChartSeriesData, ChartPosition> chartPositions = new Dictionary<ChartSeriesData, ChartPosition>();
+    private bool isDragging = false;
+    private double offsetX;
+    private double offsetY;
+    private ChartSeriesData draggingChart = new ChartSeriesData();
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        // Get the URI of the current request
+        //var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        clusterid = ClusterId_p.ToString(); 
+        dashboardName = DashboardName_p; 
+
+        //ds = await getDashboard(clusterid, dashboardName);
+    }
+
+    private async Task<Dashboard> getDashboard(string clusterid, string dashboardName)
+    {
+        Dashboard oldDash = new Dashboard();
+        var url_dashname = $"api/Dashboard/GetDashboardDetails?clusterid={clusterid}&&dashname={dashboardName}";
+        oldDash = await Http.GetFromJsonAsync<Dashboard>(url_dashname);
+        if (oldDash != null)
+        {
+            Dense_Radio = (oldDash.dashType == "Unit Dashboard") ? true : false;
+            if (oldDash.QFChartList != null)
+            {
+                List<int> chartIdList = new List<int>();
+                foreach (var chart in oldDash.QFChartList)
+                {
+                    foreach (var kvp in chart)
+                    {
+                        chartIdList.Add(kvp.Key);
+                        // ChartPosition position = kvp.Value;
+                    }
+                }
+                var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
+                try
+                {
+                    var dashboard_qfChartList = await Http.GetFromJsonAsync<QFChart[]>(url_QFChart);
+                    if (dashboard_qfChartList != null)
+                    {
+                        foreach (var dashboard_chart in dashboard_qfChartList)
+                        {
+                            if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
+                            {
+                                showLineChart = true;
+                                var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
+                                lineSeriesData.chartTitle = dashboard_chart.chartTitle;
+                                // var chartPosition = oldDash.QFChartList.SelectMany(chartDict => chartDict)
+                                //                           .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;
+                                lineChartList.Add(lineSeriesData);
+                                /* if (chartPosition != null)
+                                 {
+                                     chartPositions[lineSeriesData] = chartPosition;
+                                 }*/
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ShowAlert("No Data to display check other Dashboard !!", Defaults.Classes.Position.BottomRight, Severity.Error);
+                }
+            }
+        }
+        return oldDash;
+    }
+
+    private void OnMouseDown(MouseEventArgs e, ChartSeriesData chart)
+    {
+        isDragging = true;
+        draggingChart = chart;
+        var position = chartPositions[chart];
+        offsetX = e.ClientX - position.X;
+        offsetY = e.ClientY - position.Y;
+    }
+
+    private void OnMouseUp()
+    {
+        isDragging = false;
+        draggingChart = null; // Clear the dragging chart
+    }
+
+    private void OnMouseMove(MouseEventArgs e)
+    {
+        if (isDragging && draggingChart != null)
+        {
+            var position = chartPositions[draggingChart];
+            position.X = e.ClientX - offsetX;
+            position.Y = e.ClientY - offsetY;
+            StateHasChanged(); // Refresh the UI
+        }
+    }
+
+
+
+    void ShowAlert(string message, string position, Severity sev)
+    {
+        Snackbar.Clear();
+        Snackbar.Configuration.PositionClass = position;
+        Snackbar.Add(message, sev, c => c.SnackbarVariant = Variant.Outlined);
+    }
+
+
+}
