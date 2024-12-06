@@ -52,7 +52,7 @@
                                 <Columns>
                                     <PropertyColumn Property="x => x.dashName" Title="Dashboard Name">
                                         <CellTemplate>
-                                            <MudNavLink Href="@($"/displayDashboard?dashboardName={context.Item.dashName}&clusterid={clusterid}")">
+                                            <MudNavLink Href="@($"/renderdash?dashboardName={context.Item.dashName}&clusterid={clusterid}")">
                                                 @context.Item.dashName
                                             </MudNavLink>
                                         </CellTemplate>
@@ -119,7 +119,7 @@
 
     private void GoTo(string dashName)
     {
-        navManager.NavigateTo($"/displayDashboard?dashboardName={dashName}&clusterid={clusterid}");
+        navManager.NavigateTo($"/renderdash?dashboardName={dashName}&clusterid={clusterid}");
     }
 }
 

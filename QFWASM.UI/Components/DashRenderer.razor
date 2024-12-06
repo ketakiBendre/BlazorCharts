@@ -39,40 +39,52 @@
                             <h1>Welcome to @dashboardName</h1>
                             <h1>Clusterid @clusterid</h1>
                         </MudItem>
-                        @if (showLineChart)
+                        @if (showChart)
                         {
-                            foreach (var lineChart in lineChartList)
-                            {
-                                var position = chartPositions[lineChart]; // Get the position for the current chart
+                            <MudGrid>
+                                <MudItem xs="12">
+                                    <MudGrid Id="sortable-grid">
+                                        @for (int i = 0; i < allChartList.Count; i++)
+                                        {
+                                            int localindex = i;
+                                            var displayChart = allChartList[i];
+                                            var chartData = ds.QFChartList[i];
+                                            var chartId = chartData.Keys.First();
+                                            var chartBreak = chartData[chartId];
 
-                                <MudItem xs="2" sm="2" md="2">
-                                    <MudPaper @onmousedown="(e) => OnMouseDown(e, lineChart)"
-                                              @onmouseup="OnMouseUp"
-                                              @onmousemove="OnMouseMove"
-                                              style="@($"position: absolute; left: {position.X}px; top: {position.Y}px; cursor: move;")"
-                                              Elevation="4">
-                                        <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
-                                        <div>
-                                            <MudChart ChartType="ChartType.Line"
-                                                      ChartSeries="@lineChart.series"
-                                                      @bind-SelectedIndex="Index"
-                                                      XAxisLabels="@lineChart.xAxisLabels"
-                                                      Width="100%"
-                                                      Height="350px"
-                                                      ChartOptions="@options" />
+                                            <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId">
+                                                <MudPaper>
+                                                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
+                                                    <MudChart ChartType="@displayChart.chartType"
+                                                              ChartSeries="@displayChart.series"
+                                                              @bind-SelectedIndex="@displayChart.Index"
+                                                              XAxisLabels="@displayChart.xAxisLabels"
+                                                              Width="100%"
+                                                              Height="350px"
+                                                              ChartOptions="@displayChart.options" />
 
-                                            <MudGrid>
-                                                @*<MudItem xs="6"> // Need to maintain seprate index for each chart, commenting now
-                                        <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : lineChart.series[Index].Name)</MudText>
-                                        </MudItem>*@
-                                                <MudItem xs="6">
-                                                    <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
-                                                </MudItem>
-                                            </MudGrid>
-                                        </div>
-                                    </MudPaper>
+                                                    <MudGrid>
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
+                                                        </MudItem>
+                                                        <MudItem xs="6">
+                                                            <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
+                                                        </MudItem>
+                                                    </MudGrid>
+                                                    <MudGrid>
+                                                        <MudItem xs="6">
+                                                            <MudContainer Style="text-align: right;">
+                                                                <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, -1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" />
+                                                                <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, 1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" />
+                                                            </MudContainer>
+                                                        </MudItem>
+                                                    </MudGrid>
+                                                </MudPaper>
+                                            </MudItem>
+                                        }
+                                    </MudGrid>
                                 </MudItem>
-                            }
+                            </MudGrid>
                         }
                     }
              
@@ -127,21 +139,13 @@
     public bool Dense_Radio { get; set; } = true;
     private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, BackdropClick = false };
 
-    private bool showLineChart = false;
-    private int Index { get; set; } = -1; // Default selected index
+    private bool showChart = false;
+    private bool updatebrk = false;
     private string[] xAxisLabels = new string[0];
     private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
-    private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
-
     private QFChart ReturnedLineChart = new QFChart();
     private Dashboard ds;
-    private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
-
-    private Dictionary<ChartSeriesData, ChartPosition> chartPositions = new Dictionary<ChartSeriesData, ChartPosition>();
-    private bool isDragging = false;
-    private double offsetX;
-    private double offsetY;
-    private ChartSeriesData draggingChart = new ChartSeriesData();
+    private List<ChartSeriesData> allChartList = new List<ChartSeriesData>();
 
 
     protected async override Task OnInitializedAsync()
@@ -151,9 +155,60 @@
 
         clusterid = ClusterId_p.ToString(); 
         dashboardName = DashboardName_p; 
-
-        //ds = await getDashboard(clusterid, dashboardName);
+        updatebrk = false;
+        ds = await getDashboard(clusterid, dashboardName);
     }
+
+
+    void UpdateBreaks(int dashboardId, int chartIndex, int changeAmount)
+    {
+        if (ds == null || ds.dashid != dashboardId) return;
+
+        // Ensure the chartIndex is valid
+        if (chartIndex >= ds.QFChartList.Count) return;
+
+        var chartData = ds.QFChartList[chartIndex];
+
+        // Get the chart ID and update its break value
+        foreach (var chartId in chartData.Keys.ToList()) // Iterate keys
+        {
+            var currentBreak = chartData[chartId];
+            var newBreak = currentBreak + changeAmount;
+
+            // Ensure the break value stays within bounds
+            if (newBreak > 12 || newBreak < 1) return;
+
+            // Update the break value
+            chartData[chartId] = newBreak;
+
+            // Persist the change back to the `QFChartList`
+            ds.QFChartList[chartIndex] = chartData;
+            updatebrk = true;
+            StateHasChanged();
+        }
+    }
+
+    void UpdatePapers(int dashboardId, int chartCount)
+    {
+        if (ds == null || ds.dashid != dashboardId) return;
+
+        // Adjust the number of charts in QFChartList
+        while (ds.QFChartList.Count < chartCount)
+        {
+            // Add new chart with default break value of 3
+            ds.QFChartList.Add(new Dictionary<int, int> { { 0, 3 } });
+        }
+
+        while (ds.QFChartList.Count > chartCount)
+        {
+            // Remove excess charts
+            ds.QFChartList.RemoveAt(ds.QFChartList.Count - 1);
+        }
+
+
+        StateHasChanged();
+    }
+
 
     private async Task<Dashboard> getDashboard(string clusterid, string dashboardName)
     {
@@ -171,7 +226,7 @@
                     foreach (var kvp in chart)
                     {
                         chartIdList.Add(kvp.Key);
-                        // ChartPosition position = kvp.Value;
+
                     }
                 }
                 var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
@@ -180,20 +235,23 @@
                     var dashboard_qfChartList = await Http.GetFromJsonAsync<QFChart[]>(url_QFChart);
                     if (dashboard_qfChartList != null)
                     {
-                        foreach (var dashboard_chart in dashboard_qfChartList)
+                        var orderedCharts = chartIdList
+                                             .Select(id => dashboard_qfChartList.FirstOrDefault(chart => chart.chartID == id))
+                                             .Where(chart => chart != null)
+                                             .ToList();
+
+                        foreach (var dashboard_chart in orderedCharts)
                         {
+
+                            Console.WriteLine($" dashboard charts:{dashboard_chart.chartTitle}");
                             if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
                             {
-                                showLineChart = true;
+                                showChart = true;
                                 var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                 lineSeriesData.chartTitle = dashboard_chart.chartTitle;
-                                // var chartPosition = oldDash.QFChartList.SelectMany(chartDict => chartDict)
-                                //                           .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;
-                                lineChartList.Add(lineSeriesData);
-                                /* if (chartPosition != null)
-                                 {
-                                     chartPositions[lineSeriesData] = chartPosition;
-                                 }*/
+                                lineSeriesData.chartId = dashboard_chart.chartID;
+                                lineSeriesData.chartType = dashboard_chart.chartType;
+                                allChartList.Add(lineSeriesData);
                             }
                         }
                     }
@@ -206,34 +264,6 @@
         }
         return oldDash;
     }
-
-    private void OnMouseDown(MouseEventArgs e, ChartSeriesData chart)
-    {
-        isDragging = true;
-        draggingChart = chart;
-        var position = chartPositions[chart];
-        offsetX = e.ClientX - position.X;
-        offsetY = e.ClientY - position.Y;
-    }
-
-    private void OnMouseUp()
-    {
-        isDragging = false;
-        draggingChart = null; // Clear the dragging chart
-    }
-
-    private void OnMouseMove(MouseEventArgs e)
-    {
-        if (isDragging && draggingChart != null)
-        {
-            var position = chartPositions[draggingChart];
-            position.X = e.ClientX - offsetX;
-            position.Y = e.ClientY - offsetY;
-            StateHasChanged(); // Refresh the UI
-        }
-    }
-
-
 
     void ShowAlert(string message, string position, Severity sev)
     {
