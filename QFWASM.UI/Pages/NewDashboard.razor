@@ -68,38 +68,39 @@
                     </MudContainer>
                 </MudGrid>
             </MudPaper>
+
         </MudItem>
        
-        @if (showLineChart)
+        @if (showChart)
         {
             <MudGrid>
             <MudItem xs="12">
                     <MudGrid Id="sortable-grid">
-                    @for (int i=0;i<lineChartList.Count;i++)
+                    @for (int i=0;i<allChartList.Count;i++)
                     {
                             int localindex = i;
-                            var lineChart = lineChartList[i];
+                            var displayChart = allChartList[i];
                             var chartData = ds.QFChartList[i];
-                            var chartId = chartData.Keys.First(); // Assuming one chart per dictionary
+                            var chartId = chartData.Keys.First(); 
                             var chartBreak = chartData[chartId];
 
-                            <MudItem xs="@chartBreak" data-item-id="@lineChart.chartId">
+                            <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId">
                                 <MudPaper>
-                                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
-                                        <MudChart ChartType="ChartType.Line"
-                                                  ChartSeries="@lineChart.series"
+                                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
+                                    <MudChart ChartType="@displayChart.chartType"
+                                              ChartSeries="@displayChart.series"
                                                   @bind-SelectedIndex="Index"
-                                                  XAxisLabels="@lineChart.xAxisLabels"
+                                              XAxisLabels="@displayChart.xAxisLabels"
                                                   Width="100%"
                                                   Height="350px"
-                                                  ChartOptions="@options" />
+                                              ChartOptions="@displayChart.options" />
 
                                         <MudGrid>
                                             @*<MudItem xs="6"> // Need to maintain seprate index for each chart, commenting now
-                                    <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : lineChart.series[Index].Name)</MudText>
+                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : displayChart.series[Index].Name)</MudText>
                                     </MudItem>*@
                                             <MudItem xs="6">
-                                                <MudSlider @bind-Value="options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @options.LineStrokeWidth.ToString()</MudSlider>
+                                            <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
                                             </MudItem>
                                         </MudGrid>
                                     <MudGrid>
@@ -139,17 +140,16 @@
     public bool Dense_Radio { get; set; } = true;
     private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, BackdropClick = false};
 
-    private bool showLineChart = false;
+    private bool showChart = false;
     private bool showBarChart = false;
     private int Index { get; set; } = -1; // Default selected index
     private string[] xAxisLabels = new string[0];
     private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
-    private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
+    //private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
 
     private QFChart ReturnedLineChart = new QFChart();
     private Dashboard ds;
-    private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
-    int[] breaks = new int[10] { 3, 4, 2, 3, 3, 2, 4,3,2,4 };
+    private List<ChartSeriesData> allChartList = new List<ChartSeriesData>();
 
     int _papers = 0;
     int papers { get { return _papers; } set { UpdatePapers(value,12); } }
@@ -181,7 +181,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender || lineChartList.Count > 0)
+        if (firstRender || allChartList.Count > 0)
         {
             await JSRuntime.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
         }
@@ -200,8 +200,8 @@
         // Create a mapping of chart IDs to their corresponding chart data
         var chartDataMap = chartDataList.ToDictionary(item => item.ChartId);
 
-        // Reorder lineChartList based on the new order in updatedIds
-        lineChartList = lineChartList
+        // Reorder allChartList based on the new order in updatedIds
+        allChartList = allChartList
             .OrderBy(item => updatedIds.IndexOf(item.chartId.ToString()))
             .ToList();
 
@@ -210,7 +210,7 @@
         // Reconstruct QFChartList with the reordered chart data
         var newQFChartList = new List<Dictionary<int, int>>();
 
-        foreach (var chart in lineChartList)
+        foreach (var chart in allChartList)
         {
             var chartId = chart.chartId;
 
@@ -228,9 +228,9 @@
         // Replace the old QFChartList with the reordered one
         ds.QFChartList = newQFChartList;
 
-        // Debug: Print updated lineChartList and QFChartList for verification
+        // Debug: Print updated allChartList and QFChartList for verification
         Console.WriteLine("Updated Line Chart List:");
-        foreach (var item in lineChartList)
+        foreach (var item in allChartList)
         {
             Console.WriteLine($"Chart ID: {item.chartId}, Chart Title: {item.chartTitle}");
         }
@@ -355,24 +355,14 @@
             if (oldDash.QFChartList != null)
             {
                 List<int> chartIdList = new List<int>();
-                List<int> oldBreaks = new List<int>();
                 foreach (var chart in oldDash.QFChartList)
                 {
                     foreach (var kvp in chart)
                     {
                         chartIdList.Add(kvp.Key);
-                        oldBreaks.Add(kvp.Value);
-                    }
-                }
 
-                for (int i = 0; i < oldBreaks.Count; i++)
-                {
-                    if (i < breaks.Length)
-                    {
-                        breaks[i] = oldBreaks[i]; // Update breaks with reordered values
                     }
                 }
-                Console.WriteLine("Current Breaks: " + string.Join(", ", breaks));
                 var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
                 try
                 {
@@ -390,11 +380,12 @@
                             Console.WriteLine($" dashboard charts:{dashboard_chart.chartTitle}");
                             if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
                             {
-                                showLineChart = true;
+                                showChart = true;
                                 var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                 lineSeriesData.chartTitle = dashboard_chart.chartTitle;
                                 lineSeriesData.chartId = dashboard_chart.chartID;
-                                lineChartList.Add(lineSeriesData);
+                                lineSeriesData.chartType = dashboard_chart.chartType;
+                                allChartList.Add(lineSeriesData);
                             }
                         }
                     }
@@ -465,12 +456,13 @@
             var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.chartDataStreamList.Cast<LineChartData>().ToList());
             lineSeriesData.chartTitle = ReturnedLineChart.chartTitle;
             lineSeriesData.chartId = ReturnedLineChart.chartID;
-            lineChartList.Add(lineSeriesData);
+            lineSeriesData.chartType = MudBlazor.ChartType.Line;
+            allChartList.Add(lineSeriesData);
             
-            _papers = lineChartList.Count;
+            _papers = allChartList.Count;
             
             var chartDetail = new Dictionary<int, int>{
-                                 { ReturnedLineChart.chartID, breaks[lineChartList.Count-1] }
+                                 { ReturnedLineChart.chartID, 3 }
                                 };
             if (chartDetail != null)
             {
@@ -490,7 +482,7 @@
                         Console.WriteLine($"Received Cluster ID: {rowsAffected}");
                     }
                 }
-                showLineChart = true;
+                showChart = true;
                 StateHasChanged();
             }
         }
