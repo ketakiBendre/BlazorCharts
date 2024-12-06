@@ -14,8 +14,8 @@ namespace Quantaflare.Data
         public MudBlazor.ChartType chartType { get; set; }
 
         public MudBlazor.ChartOptions options { get; set; } = new MudBlazor.ChartOptions();
-      
 
+        public int Index { get; set; } = -1;
         public string[] xAxisLabels = Array.Empty<string>();
 
         public List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();

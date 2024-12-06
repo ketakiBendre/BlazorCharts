@@ -89,25 +89,27 @@
                                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
                                     <MudChart ChartType="@displayChart.chartType"
                                               ChartSeries="@displayChart.series"
-                                                  @bind-SelectedIndex="Index"
+                                              @bind-SelectedIndex="@displayChart.Index"
                                               XAxisLabels="@displayChart.xAxisLabels"
                                                   Width="100%"
                                                   Height="350px"
                                               ChartOptions="@displayChart.options" />
 
                                         <MudGrid>
-                                            @*<MudItem xs="6"> // Need to maintain seprate index for each chart, commenting now
-                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : displayChart.series[Index].Name)</MudText>
-                                    </MudItem>*@
+                                            <MudItem xs="6"> 
+                                                 <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
+                                            </MudItem>
                                             <MudItem xs="6">
-                                            <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
+                                                 <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
                                             </MudItem>
                                         </MudGrid>
                                     <MudGrid>
-                                        <MudContainer Style="text-align: right;">
-                                            <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, -1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" />
-                                            <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, 1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" />
-                                        </MudContainer>
+                                        <MudItem xs="6">
+                                            <MudContainer Style="text-align: right;">
+                                                <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, -1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, 1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" />
+                                            </MudContainer>
+                                        </MudItem>
                                     </MudGrid>
                             </MudPaper>
                         </MudItem>
@@ -142,11 +144,8 @@
 
     private bool showChart = false;
     private bool showBarChart = false;
-    private int Index { get; set; } = -1; // Default selected index
     private string[] xAxisLabels = new string[0];
     private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
-    //private MudBlazor.ChartOptions options = new MudBlazor.ChartOptions();
-
     private QFChart ReturnedLineChart = new QFChart();
     private Dashboard ds;
     private List<ChartSeriesData> allChartList = new List<ChartSeriesData>();
