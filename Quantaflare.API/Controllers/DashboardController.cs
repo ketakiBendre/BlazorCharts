@@ -39,21 +39,7 @@ namespace Quantaflare.API.Controllers
 
         }
 
-        /*[HttpGet]
-        [Route("getDashboard")]
-        public IActionResult getDashboard(int clusterId)
-        {
-            using (var connection = new NpgsqlConnection(_connectionString))
-            {
-                connection.Open();
-                var dashboard = connection.Query<Dashboard>("SELECT * FROM dashboard").ToList();
-                if (dashboard != null)
-                    return Ok(dashboard);
-                else
-                    return BadRequest("No data found");
-            }
-        }
-        */
+        
         [HttpGet]
         [Route("getDashboard")]
 
@@ -142,47 +128,42 @@ namespace Quantaflare.API.Controllers
 
         [HttpPost]
         [Route("UpdateDashboard")]
-        public IActionResult UpdateDashboard(Dashboard ds)
+        public IActionResult UpdateDashboard(Dashboard request)
         {
-            var jsonData = JsonSerializer.Serialize(ds.QFChartList);
+            var updates = new List<string>();
+            var parameters = new DynamicParameters();
+
+            if (!string.IsNullOrEmpty(request.dashName))
+            {
+                updates.Add("dashname = @DashName");
+                parameters.Add("DashName", request.dashName);
+            }
+
+            if (!string.IsNullOrEmpty(request.dashType))
+            {
+                updates.Add("dashtype = @DashType");
+                parameters.Add("DashType", request.dashType);
+            }
+
+            if (!string.IsNullOrEmpty(request.QFChartListJson))
+            {
+                updates.Add("chartinfo = @QFChartListJson::jsonb");
+                parameters.Add("QFChartListJson", request.QFChartListJson);
+            }
+
+            var sql = $"UPDATE dashboard SET {string.Join(", ", updates)} WHERE clusterid = @ClusterId AND dashid = @DashId";
+            parameters.Add("ClusterId", request.clusterId);
+            parameters.Add("DashId", request.dashid);
 
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
-                var sql = "UPDATE dashboard SET chartinfo=@jsonData::jsonb WHERE clusterid =@clusterId and dashname= @dashName and dashid =@dashid";
-                var parameters = new
-                {
-                    jsonData,
-                    clusterId = ds.clusterId,
-                    dashName = ds.dashName,
-                    dashid = ds.dashid
-                };
                 int rowsAffected = connection.Execute(sql, parameters);
                 return Ok(rowsAffected);
             }
         }
 
-        [HttpPost]
-        [Route("UpdateDashboardName")]
-        public IActionResult UpdateDashboardName(DashboardUpdateRequest dsUpdate)
-        {
-
-            using (var connection = new NpgsqlConnection(_connectionString))
-            {
-                connection.Open();
-                var sql = "UPDATE dashboard SET dashname= @TextValue,dashtype =@dashtype WHERE clusterid =@clusterId and dashname= @dashName and dashid =@dashid";
-                var parameters = new
-                {
-                    clusterId = dsUpdate.clusterid,
-                    dashName = dsUpdate.dashname,
-                    dashid = dsUpdate.dashid,
-                    TextValue = dsUpdate.TextValue,
-                    dashtype = dsUpdate.dashtype
-                };
-                int rowsAffected = connection.Execute(sql, parameters);
-                return Ok(rowsAffected);
-            }
-        }
+        
 
         [HttpGet]
         [Route("getCluster")]
@@ -197,14 +178,6 @@ namespace Quantaflare.API.Controllers
             }
         }
 
-        public class DashboardUpdateRequest
-        {
-            public int clusterid { get; set; }
-            public int dashid { get; set; }
-            public string dashname { get; set; }
-            public string TextValue { get; set; }
-            public string dashtype { get; set; }
-        }
-
+       
     }
 }

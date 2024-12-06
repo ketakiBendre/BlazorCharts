@@ -7,6 +7,9 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@using System.Text.Json
+@using System.Net.Http.Json
+@using System.Text.Json.Serialization
 
 
 <PageTitle>New Unit Dashboard</PageTitle>
@@ -515,46 +518,33 @@
                     ShowAlert("Failed in New Dashboard Creation !!", Defaults.Classes.Position.BottomRight, Severity.Error);
                 }
             }
-            else if (!reOrdered && !updatebrk)
+            else
             {
-                if (TextValue != ds.dashName || Dense_Radio != ((ds.dashType == "Unit Dashboard")? true:false))
-                {
-                    var dataToUpdate = new
-                    {
-                        clusterid = ds.clusterId,
-                        dashid = ds.dashid,
-                        dashname = ds.dashName,
-                        TextValue = TextValue,
-                        dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard"
-                    };
+                bool nameChanged = TextValue != ds.dashName;
+                bool typeChanged = Dense_Radio != (ds.dashType == "Unit Dashboard");
+                bool chartChanged = updatebrk || reOrdered;
 
-                    var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboardName", dataToUpdate);
+                // Update the Dashboard object conditionally
+                if (nameChanged)
+                    ds.dashName = TextValue;
+
+                if (typeChanged)
+                    ds.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
+
+                if (chartChanged)
+                    ds.QFChartListJson = JsonSerializer.Serialize(ds.QFChartList);
+
+                // Make the API call only if any updates are required
+                if (nameChanged || typeChanged || chartChanged)
+                {
+                    var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
                     if (response.IsSuccessStatusCode)
                     {
                         var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
-                        Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+                        Console.WriteLine($"Rows updated: {rowsAffected}");
                     }
                 }
 
-            }
-            else if (updatebrk && !reOrdered)
-            {
-                
-                var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
-                if (response.IsSuccessStatusCode)
-                {
-                    var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
-                    Console.WriteLine($"Received Cluster ID: {rowsAffected}");
-                }
-            }
-            else
-            {
-                var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
-                if (response.IsSuccessStatusCode)
-                {
-                    var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
-                    Console.WriteLine($"Received Cluster ID: {rowsAffected}");
-                }
             }
             Navigation.NavigateTo("/managedash");
         }
