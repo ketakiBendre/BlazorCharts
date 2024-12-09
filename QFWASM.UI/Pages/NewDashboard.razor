@@ -301,45 +301,41 @@
     }
 
 
-    private async Task<Dashboard> CreateNewDashboard()
+    private async Task<Dashboard> CreateNewDashboard(Dictionary<int, int> chartDetail = null)
     {
+        try
+        {
+            var newDash = new Dashboard
+                {
+                    clusterId = int.Parse(clusterid),
+                    createdOn = DateTime.Now,
+                    dashName = TextValue,
+                    dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard",
+                    QFChartList = chartDetail != null ? new List<Dictionary<int, int>> { chartDetail } : null
+                };
 
-        var newDash = new Dashboard();
-        newDash.clusterId = int.Parse(clusterid);
-        newDash.createdOn = DateTime.Now;
-        newDash.dashName = TextValue;
-        newDash.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
-        var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", newDash);
-        if (response.IsSuccessStatusCode)
-        {
-            newDash.dashid = await response.Content.ReadFromJsonAsync<int>();
-        }
-        else
-        {
+            var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", newDash);
+            if (response.IsSuccessStatusCode)
+            {
+                newDash.dashid = await response.Content.ReadFromJsonAsync<int>();
+                return newDash;
+            }
+
             Console.WriteLine("Failed in creating new Dashboard.");
+            return null;
         }
-        return newDash;
-    }
-
-    private async Task<Dashboard> CreateNewDashboard(Dictionary<int, int> chartDetail)
-    {
-
-        var newDash = new Dashboard();
-        newDash.clusterId = int.Parse(clusterid);
-        newDash.createdOn = DateTime.Now;
-        newDash.dashName = TextValue;
-        newDash.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
-        newDash.QFChartList.Add(chartDetail);
-        var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", newDash);
-        if (response.IsSuccessStatusCode)
+        catch (HttpRequestException ex)
         {
-            newDash.dashid = await response.Content.ReadFromJsonAsync<int>();
+            Console.WriteLine($"HTTP request error: {ex.Message}");
+            ShowAlert("Failed to create a new dashboard. Please check your network connection and try again.", Defaults.Classes.Position.BottomRight, Severity.Error);
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Failed in creating new Dashboard.");
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+            ShowAlert("An unexpected error occurred while creating a new dashboard.", Defaults.Classes.Position.BottomRight, Severity.Error);
         }
-        return newDash;
+
+        return null;
     }
 
     private async Task<Dashboard> editDashboard(string clusterid, string dashboardName)
@@ -477,6 +473,7 @@
                 else
                 {
                     ds.QFChartList.Add(chartDetail);
+                    ds.QFChartListJson = JsonSerializer.Serialize(ds.QFChartList);
                     var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
                     if (response.IsSuccessStatusCode)
                     {
