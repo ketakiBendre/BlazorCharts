@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MudBlazor;
+using MudBlazor.Components.Chart.Models;
 
 namespace Quantaflare.Data
 {
@@ -19,5 +20,7 @@ namespace Quantaflare.Data
         public string[] xAxisLabels = Array.Empty<string>();
 
         public List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
+
+        public List<TimeSeriesChartSeries> tSeries= new List<TimeSeriesChartSeries>();
     }
 }

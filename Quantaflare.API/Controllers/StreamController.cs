@@ -144,6 +144,66 @@ namespace Quantaflare.API.Controllers
         }
 
         [HttpPost]
+        [Route("getTimeChartInfo")]
+        public async Task<IActionResult> getTimeChartInfo([FromBody] List<ChartDataStream> timeChartList,
+                                                          [FromQuery] DateTimeOffset startTime,
+                                                          [FromQuery] DateTimeOffset endTime)
+        {
+            var data = await GetTimeChartInfoFunc(timeChartList, startTime, endTime);
+            return Ok(data);
+        }
+
+        private async Task<List<Dictionary<string, object>>> GetTimeChartInfoFunc(
+            List<ChartDataStream> timeChartList,
+            DateTimeOffset startTime,
+            DateTimeOffset endTime)
+        {
+            List<string> fields = new List<string>();
+            string streamname = string.Empty;
+
+            // Prepare fields and stream name
+            foreach (ChartDataStream timeChart in timeChartList)
+            {
+                fields.Add(timeChart.field.ToLower());
+                streamname = timeChart.stream;
+            }
+
+            using (IDbConnection db = new NpgsqlConnection(_connectionString))
+            {
+                db.Open();
+                var parameters = new
+                {
+                    fields = fields.ToArray(), // Use array for compatibility with the stored procedure
+                    stream = streamname,
+                    start_time = startTime.ToUniversalTime(), // Format to match PostgreSQL
+                    end_time = endTime.ToUniversalTime()
+                };
+
+                // Execute the stored procedure
+                var result = await db.QueryAsync(
+                    "SELECT * FROM public.gettimechartdata(@fields, @stream, @start_time, @end_time)", parameters);
+
+                var dynamicResults = new List<Dictionary<string, object>>();
+
+                foreach (var row in result)
+                {
+                    var dictionary = new Dictionary<string, object>();
+
+                    // Convert dynamic result into a dictionary
+                    foreach (var property in (IDictionary<string, object>)row)
+                    {
+                        dictionary[property.Key] = property.Value;
+                    }
+
+                    dynamicResults.Add(dictionary);
+                }
+
+                return dynamicResults;
+            }
+        }
+
+
+        [HttpPost]
         [Route("PostQFChart")]
         public async Task<IActionResult> PostQFChart([FromBody] QFChart qfChart)
         {

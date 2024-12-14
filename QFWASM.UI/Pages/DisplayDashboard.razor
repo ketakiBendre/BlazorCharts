@@ -15,14 +15,10 @@
     foreach (var lineChart in lineChartList)
     {
 
-        var position = chartPositions[lineChart]; // Get the position for the current chart
+       // var position = chartPositions[lineChart]; // Get the position for the current chart
 
         <MudItem xs="2" sm="2" md="2">
-            <MudPaper @onmousedown="(e) => OnMouseDown(e, lineChart)"
-                      @onmouseup="OnMouseUp"
-                      @onmousemove="OnMouseMove"
-                      style="@($"position: absolute; left: {position.X}px; top: {position.Y}px; cursor: move;")"
-                      Elevation="4">
+            <MudPaper  Elevation="4">
                 <MudText Typo="Typo.h6" Style="text-decoration: underline;">@lineChart.chartTitle</MudText>
                 <div>
                     <MudChart ChartType="ChartType.Line"
@@ -63,7 +59,7 @@
     private Dashboard ds;
     private List<ChartSeriesData> lineChartList = new List<ChartSeriesData>();
 
-    private Dictionary<ChartSeriesData, ChartPosition> chartPositions = new Dictionary<ChartSeriesData, ChartPosition>();
+   // private Dictionary<ChartSeriesData, ChartPosition> chartPositions = new Dictionary<ChartSeriesData, ChartPosition>();
     private bool isDragging = false;
     private double offsetX;
     private double offsetY;
@@ -134,34 +130,7 @@
         return oldDash;
     }
 
-    private void OnMouseDown(MouseEventArgs e, ChartSeriesData chart)
-    {
-        isDragging = true;
-        draggingChart = chart;
-        var position = chartPositions[chart];
-        offsetX = e.ClientX - position.X;
-        offsetY = e.ClientY - position.Y;
-    }
-
-    private void OnMouseUp()
-    {
-        isDragging = false;
-        draggingChart = null; // Clear the dragging chart
-    }
-
-    private void OnMouseMove(MouseEventArgs e)
-    {
-        if (isDragging && draggingChart != null)
-        {
-            var position = chartPositions[draggingChart];
-            position.X = e.ClientX - offsetX;
-            position.Y = e.ClientY - offsetY;
-            StateHasChanged(); // Refresh the UI
-        }
-    }
-
-
-
+   
     void ShowAlert(string message, string position, Severity sev)
     {
         Snackbar.Clear();

@@ -59,7 +59,7 @@
                         <MudIconButton Target="_blank"
                                        Variant="Variant.Outlined"
                                        Icon="@Icons.Material.Filled.TableChart"
-                                       Color="Color.Primary" aria-label="TimeSeriesTable" Class="big-icon-button mr-5" />
+                                       Color="Color.Primary" OnClick="TimeChartPaper" Class="big-icon-button mr-5" />
 
                     </MudItem>
                     
@@ -87,7 +87,7 @@
                             var chartId = chartData.Keys.First(); 
                             var chartBreak = chartData[chartId];
 
-                            <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId">
+                            <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId" style="height: 100px;">
                                 <MudPaper>
                                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
                                     <MudChart ChartType="@displayChart.chartType"
@@ -433,6 +433,19 @@
         }
 
         return newDashName;
+    }
+
+    private async Task TimeChartPaper()
+    {
+
+        var parameters = new DialogParameters()
+        {
+            { "Title", "Add Time Chart" },
+            {"ClusterId", clusterid}
+        };
+        var dialog = DialogService.Show<Components.TimeChartComponent>("Custom Options Dialog", parameters, _maxWidth);
+
+        var result = await dialog.Result;
     }
 
     private async Task LineChartPaper()

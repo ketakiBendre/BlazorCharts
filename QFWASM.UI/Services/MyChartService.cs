@@ -3,6 +3,9 @@ using static System.Net.WebRequestMethods;
 using System.Text.Json;
 using System.Net.Http.Json;
 using System;
+using MudBlazor.Components.Chart.Models;
+using System.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace QFWASM.UI.Services
 {
@@ -12,6 +15,7 @@ namespace QFWASM.UI.Services
         private string[] xAxisLabels = new string[0];
         private List<ChartDataResult> chartDataList;
         private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
+        private List<TimeSeriesChartSeries> tSeries = new List<TimeSeriesChartSeries>();
         private ChartSeriesData chartSeriesData = new ChartSeriesData();
         public MyChartService(HttpClient httpClient)
         {
@@ -59,15 +63,59 @@ namespace QFWASM.UI.Services
             string removeKey = chartStream.field;
             if (chartStream is LineChartData lineChartData)
             {
-                removeKey = (removeKey+ "_" + lineChartData.agr).ToLower();
+                removeKey = (removeKey + "_" + lineChartData.agr).ToLower();
             }
-            
+
             var seriesToRemove = chartSeriesData.series.FirstOrDefault(x => x.Name == removeKey);
 
             // If found, remove it from the list
             if (seriesToRemove != null)
             {
                 chartSeriesData.series.Remove(seriesToRemove);
+            }
+            return chartSeriesData;
+        }
+
+        public async Task<ChartSeriesData> GetTimeChartInfo(List<ChartDataStream> timeChartList, DateTimeOffset startTime, DateTimeOffset endTime)
+        {
+            chartSeriesData = new ChartSeriesData();
+            var queryString = $"?startTime={startTime:O}&endTime={endTime:O}"; // 'O' formats DateTime to ISO 8601
+
+            // Make the POST request with the query string
+            var response = await Http.PostAsJsonAsync($"api/Stream/getTimeChartInfo{queryString}", timeChartList);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var resultList = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>();
+
+                chartDataList = resultList.Select(dict => new ChartDataResult
+                {
+                    recordtime = DateTimeOffset.Parse(dict["recordtime"].ToString()),
+                    result = JsonSerializer.Deserialize<Dictionary<string, double>>(dict["result"].ToString())
+                }).ToList();
+                chartSeriesData.xAxisLabels = chartDataList.Select(data => data.recordtime.ToString("hh:mm tt")).ToArray();
+
+                // Prepare Series with Data Points
+                tSeries = new List<TimeSeriesChartSeries>();
+                var seriesKeys = chartDataList.SelectMany(data => data.result.Select(x => x.Key)).Distinct().ToList();
+                foreach (var key in seriesKeys)
+                {
+                    var seriesData = new TimeSeriesChartSeries
+                    {
+                        Name = key,
+                        Data = chartDataList
+                   .Where(data => data.result.ContainsKey(key))
+                   .Select(data => new TimeSeriesChartSeries.TimeValue(data.recordtime.UtcDateTime, data.result[key]))
+                   .ToList(),
+                        IsVisible = true,
+                        Type = TimeSeriesDiplayType.Area
+                    };
+
+                    tSeries.Add(seriesData);
+                }
+
+                chartSeriesData.tSeries = tSeries;
+
             }
             return chartSeriesData;
         }
