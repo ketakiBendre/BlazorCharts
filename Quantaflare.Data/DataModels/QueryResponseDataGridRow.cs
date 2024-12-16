@@ -11,4 +11,5 @@ namespace QFDomain.Entities.Data.Read
         public long TimeStamp { get; set; }
         public Dictionary<string, object> KeyValues { get; set; } = new Dictionary<string, object>();
     }
+}
 

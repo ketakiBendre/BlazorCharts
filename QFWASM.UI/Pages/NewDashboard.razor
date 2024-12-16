@@ -60,6 +60,10 @@
                                        Variant="Variant.Outlined"
                                        Icon="@Icons.Material.Filled.TableChart"
                                        Color="Color.Primary" OnClick="TimeChartPaper" Class="big-icon-button mr-5" />
+                        <MudIconButton Target="_blank"
+                                       Variant="Variant.Outlined"
+                                       Icon="@Icons.Material.Filled.Dataset"
+                                       Color="Color.Primary" OnClick="RawDataPaper" Class="big-icon-button mr-5" />
 
                     </MudItem>
                     
@@ -90,6 +94,17 @@
                             <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId" style="height: 100px;">
                                 <MudPaper>
                                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
+                                    @if (@displayChart.chartType == ChartType.Timeseries)
+                                    {
+                                        <MudTimeSeriesChart ChartType="@displayChart.chartType"
+                                                  ChartSeries="@displayChart.tSeries"
+                                                  @bind-SelectedIndex="@displayChart.Index"
+                                                  XAxisLabels="@displayChart.xAxisLabels"
+                                                  Width="100%"
+                                                  Height="350px"
+                                                  ChartOptions="@displayChart.options" CanHideSeries TimeLabelSpacing="TimeSpan.FromMinutes(5)" />
+                                    }
+                                    else{
                                     <MudChart ChartType="@displayChart.chartType"
                                               ChartSeries="@displayChart.series"
                                               @bind-SelectedIndex="@displayChart.Index"
@@ -97,7 +112,7 @@
                                                   Width="100%"
                                                   Height="350px"
                                               ChartOptions="@displayChart.options" />
-
+                                    }
                                         <MudGrid>
                                             <MudItem xs="6"> 
                                                  <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
@@ -340,6 +355,7 @@
 
     private async Task<Dashboard> editDashboard(string clusterid, string dashboardName)
     {
+        DateTimeOffset startTime, endTime;
         Dashboard oldDash = new Dashboard();
         if (dashboardName != null)
         {
@@ -384,6 +400,17 @@
                                 lineSeriesData.chartId = dashboard_chart.chartID;
                                 lineSeriesData.chartType = dashboard_chart.chartType;
                                 allChartList.Add(lineSeriesData);
+                            }
+                            else if (dashboard_chart.chartType == MudBlazor.ChartType.Timeseries)
+                            {
+                                showChart = true;
+                                startTime = DateTimeOffset.Now.AddDays(-5).Date;
+                                endTime = DateTimeOffset.Now;
+                                var timeSeriesData = await myChartService.GetTimeChartInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+                                timeSeriesData.chartTitle = dashboard_chart.chartTitle;
+                                timeSeriesData.chartId = dashboard_chart.chartID;
+                                timeSeriesData.chartType = MudBlazor.ChartType.Timeseries;
+                                allChartList.Add(timeSeriesData);
                             }
                         }
                     }
@@ -435,9 +462,11 @@
         return newDashName;
     }
 
-    private async Task TimeChartPaper()
-    {
 
+    private async Task RawDataPaper()
+    {
+        QFChart ReturnedTimeChart = new QFChart();
+        DateTimeOffset startTime, endTime;
         var parameters = new DialogParameters()
         {
             { "Title", "Add Time Chart" },
@@ -446,6 +475,99 @@
         var dialog = DialogService.Show<Components.TimeChartComponent>("Custom Options Dialog", parameters, _maxWidth);
 
         var result = await dialog.Result;
+        if (result.Data != null && !result.Canceled)
+        {
+            startTime = DateTimeOffset.Now.AddDays(-5).Date;
+            endTime = DateTimeOffset.Now;
+            ReturnedTimeChart = (QFChart)result.Data;
+            var timeSeriesData = await myChartService.GetTimeChartInfo(ReturnedTimeChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+            timeSeriesData.chartTitle = ReturnedTimeChart.chartTitle;
+            timeSeriesData.chartId = ReturnedTimeChart.chartID;
+            timeSeriesData.chartType = MudBlazor.ChartType.Timeseries;
+            allChartList.Add(timeSeriesData);
+
+            _papers = allChartList.Count;
+
+            var chartDetail = new Dictionary<int, int>{
+                                 { ReturnedTimeChart.chartID, 3 }
+                                };
+            if (chartDetail != null)
+            {
+
+                if (ds == null)
+                {
+                    ds = await CreateNewDashboard(chartDetail);
+
+                }
+                else
+                {
+                    ds.QFChartList.Add(chartDetail);
+                    ds.QFChartListJson = JsonSerializer.Serialize(ds.QFChartList);
+                    var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
+                        Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+                    }
+                }
+                showChart = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+
+    private async Task TimeChartPaper()
+    {
+        QFChart ReturnedTimeChart = new QFChart();
+        DateTimeOffset startTime, endTime;
+        var parameters = new DialogParameters()
+        {
+            { "Title", "Add Time Chart" },
+            {"ClusterId", clusterid}
+        };
+        var dialog = DialogService.Show<Components.TimeChartComponent>("Custom Options Dialog", parameters, _maxWidth);
+
+        var result = await dialog.Result;
+        if (result.Data != null && !result.Canceled)
+        {
+            startTime =  DateTimeOffset.Now.AddDays(-5).Date;
+            endTime =  DateTimeOffset.Now;
+            ReturnedTimeChart = (QFChart)result.Data;
+            var timeSeriesData = await myChartService.GetTimeChartInfo(ReturnedTimeChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+            timeSeriesData.chartTitle = ReturnedTimeChart.chartTitle;
+            timeSeriesData.chartId = ReturnedTimeChart.chartID;
+            timeSeriesData.chartType = MudBlazor.ChartType.Timeseries;
+            allChartList.Add(timeSeriesData);
+
+            _papers = allChartList.Count;
+
+            var chartDetail = new Dictionary<int, int>{
+                                 { ReturnedTimeChart.chartID, 3 }
+                                };
+            if (chartDetail != null)
+            {
+
+                if (ds == null)
+                {
+                    ds = await CreateNewDashboard(chartDetail);
+
+                }
+                else
+                {
+                    ds.QFChartList.Add(chartDetail);
+                    ds.QFChartListJson = JsonSerializer.Serialize(ds.QFChartList);
+                    var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
+                        Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+                    }
+                }
+                showChart = true;
+                StateHasChanged();
+            }
+        }
     }
 
     private async Task LineChartPaper()
