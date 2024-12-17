@@ -6,6 +6,7 @@ using System;
 using MudBlazor.Components.Chart.Models;
 using System.Linq;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Text;
 
 namespace QFWASM.UI.Services
 {
@@ -118,6 +119,59 @@ namespace QFWASM.UI.Services
 
             }
             return chartSeriesData;
+        }
+
+        public async Task<List<RawData>> GetRawDataInfo(List<ChartDataStream> timeChartList, DateTimeOffset startTime, DateTimeOffset endTime)
+        {
+            // Initialize the result list
+            var rawDataList = new List<RawData>();
+
+            // Build query string with ISO 8601 format for DateTimeOffset
+            var queryString = $"?startTime={startTime:O}&endTime={endTime:O}";
+
+            try
+            {
+                // Send the POST request with the query string and serialized body
+                var response = await Http.PostAsJsonAsync($"api/Stream/get_raw_data{queryString}", timeChartList);
+
+                // Check if the response is successful
+                if (response.IsSuccessStatusCode)
+                {
+                    // Deserialize the response directly into a List<RawData>
+                    rawDataList = await response.Content.ReadFromJsonAsync<List<RawData>>()
+                                  ?? new List<RawData>();
+                }
+                else
+                {
+                    // Log or handle unsuccessful responses
+                    var error = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Request failed with status code {response.StatusCode}: {error}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log or handle exceptions
+                Console.WriteLine($"Error fetching raw data: {ex.Message}");
+                throw; // Rethrow the exception if necessary
+            }
+
+            return rawDataList;
+        }
+
+        public List<RawData> RemoveRawData(ChartDataStream chartStream, List<RawData> rawDataList)
+        {
+            string removeKey = chartStream.field;
+
+
+            foreach (var rawData in rawDataList)
+            {
+                // Check if the field exists in the dictionary, and remove it
+                if (rawData.Fields.ContainsKey(removeKey.ToLower()))
+                {
+                    rawData.Fields.Remove(removeKey.ToLower());
+                }
+            }
+            return rawDataList;
         }
     }
 }

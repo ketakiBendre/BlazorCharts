@@ -202,6 +202,78 @@ namespace Quantaflare.API.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("get_raw_data")]
+        public async Task<IActionResult> get_raw_data([FromBody] List<ChartDataStream> timeChartList,
+                                                         [FromQuery] DateTimeOffset startTime,
+                                                         [FromQuery] DateTimeOffset endTime)
+        {
+            var data = await get_raw_dataFunc(timeChartList, startTime, endTime);
+            return Ok(data);
+        }
+
+        private async Task<List<RawData>> get_raw_dataFunc(
+            List<ChartDataStream> timeChartList,
+            DateTimeOffset startTime,
+            DateTimeOffset endTime)
+        {
+            List<string> fields = new List<string>();
+            string streamname = string.Empty;
+
+            // Prepare fields and stream name
+            foreach (ChartDataStream timeChart in timeChartList)
+            {
+                fields.Add(timeChart.field.ToLower());
+                streamname = timeChart.stream;
+            }
+
+            using (IDbConnection db = new NpgsqlConnection(_connectionString))
+            {
+                db.Open();
+                var parameters = new
+                {
+                    fields = fields.ToArray(), // Use array for compatibility with the stored procedure
+                    stream = streamname,
+                    start_time = startTime.ToUniversalTime(), // Format to match PostgreSQL
+                    end_time = endTime.ToUniversalTime()
+                };
+
+                // Execute the stored procedure
+                var result = await db.QueryAsync(
+                    "SELECT * FROM public.get_raw_data( @stream,@fields, @start_time, @end_time)", parameters);
+
+                var rawDataList = new List<RawData>();
+
+                foreach (var row in result)
+                {
+                    // Cast the row to a dynamic object
+                    var record = (IDictionary<string, object>)row;
+
+                    // Parse the recordtime
+                    var timestamp = DateTime.Parse(record["recordtime"].ToString());
+
+                    // Parse key_values JSONB into a dictionary
+                    var keyValuesJson = record["key_values"].ToString();
+                    var keyValues = JsonSerializer.Deserialize<Dictionary<string, object>>(keyValuesJson);
+
+                    // Create a new RawData object and populate it
+                    var rawData = new RawData
+                    {
+                        Timestamp = timestamp
+                    };
+
+                    foreach (var kv in keyValues)
+                    {
+                        rawData.AddOrUpdateField(kv.Key, kv.Value);
+                    }
+
+                    rawDataList.Add(rawData);
+                }
+
+                // rawDataList now contains the parsed results
+                return rawDataList;
+            }
+        }
 
         [HttpPost]
         [Route("PostQFChart")]

@@ -465,25 +465,24 @@
 
     private async Task RawDataPaper()
     {
-        QFChart ReturnedTimeChart = new QFChart();
+        QFChart ReturnedDataChart = new QFChart();
         DateTimeOffset startTime, endTime;
         var parameters = new DialogParameters()
         {
-            { "Title", "Add Time Chart" },
+            { "Title", "Show Raw Data" },
             {"ClusterId", clusterid}
         };
-        var dialog = DialogService.Show<Components.TimeChartComponent>("Custom Options Dialog", parameters, _maxWidth);
+        var dialog = DialogService.Show<Components.RawDataComponent>("Custom Options Dialog", parameters, _maxWidth);
 
         var result = await dialog.Result;
         if (result.Data != null && !result.Canceled)
         {
             startTime = DateTimeOffset.Now.AddDays(-5).Date;
             endTime = DateTimeOffset.Now;
-            ReturnedTimeChart = (QFChart)result.Data;
-            var timeSeriesData = await myChartService.GetTimeChartInfo(ReturnedTimeChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
-            timeSeriesData.chartTitle = ReturnedTimeChart.chartTitle;
-            timeSeriesData.chartId = ReturnedTimeChart.chartID;
-            timeSeriesData.chartType = MudBlazor.ChartType.Timeseries;
+            ReturnedDataChart = (QFChart)result.Data;
+            var rawData = await myChartService.GetRawDataInfo(ReturnedDataChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+           /* rawData.chartTitle = ReturnedDataChart.chartTitle;
+            rawData.chartId = ReturnedDataChart.chartID;
             allChartList.Add(timeSeriesData);
 
             _papers = allChartList.Count;
@@ -512,7 +511,7 @@
                 }
                 showChart = true;
                 StateHasChanged();
-            }
+            }*/
         }
     }
 
