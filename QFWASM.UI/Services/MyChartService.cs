@@ -121,7 +121,30 @@ namespace QFWASM.UI.Services
             return chartSeriesData;
         }
 
-        public async Task<List<RawData>> GetRawDataInfo(List<ChartDataStream> timeChartList, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<ChartSeriesData> GetRawDataInfo(List<ChartDataStream> timeChartList, DateTimeOffset startTime, DateTimeOffset endTime)
+        {
+            chartSeriesData = new ChartSeriesData();
+            var rawDataList = new List<RawData>();
+            var queryString = $"?startTime={startTime:O}&endTime={endTime:O}"; // 'O' formats DateTime to ISO 8601
+
+            // Make the POST request with the query string
+            var response = await Http.PostAsJsonAsync($"api/Stream/getTimeChartInfo{queryString}", timeChartList);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var resultList = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>();
+
+                rawDataList = resultList.Select(dict => new RawData
+                {
+                    Timestamp = DateTime.Parse(dict["recordtime"].ToString()),
+                    Fields = JsonSerializer.Deserialize<Dictionary<string, object>>(dict["result"].ToString())
+                }).ToList();
+                chartSeriesData.rawDataList = rawDataList;
+            }
+            return chartSeriesData;
+        }
+
+            public async Task<List<RawData>> GetRawDataInfo1(List<ChartDataStream> timeChartList, DateTimeOffset startTime, DateTimeOffset endTime)
         {
             // Initialize the result list
             var rawDataList = new List<RawData>();

@@ -22,5 +22,7 @@ namespace Quantaflare.Data
         public List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
 
         public List<TimeSeriesChartSeries> tSeries= new List<TimeSeriesChartSeries>();
+
+        public List<RawData> rawDataList = new List<RawData>();
     }
 }

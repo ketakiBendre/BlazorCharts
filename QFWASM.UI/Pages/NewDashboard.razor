@@ -102,7 +102,23 @@
                                                   XAxisLabels="@displayChart.xAxisLabels"
                                                   Width="100%"
                                                   Height="350px"
-                                                  ChartOptions="@displayChart.options" CanHideSeries TimeLabelSpacing="TimeSpan.FromMinutes(5)" />
+                                        ChartOptions="@displayChart.options" CanHideSeries TimeLabelSpacing="TimeSpan.FromMinutes(5)" />
+                                    }
+                                    else if (@displayChart.chartType == ChartType.Donut)
+                                    {
+                                        <MudDataGrid Items="@displayChart.rawDataList" Bordered="true" Hover="true" Striped="true" Dense="true">
+                                            <Columns>
+                                                <!-- Static Timestamp Column -->
+                                                <PropertyColumn Property="x => x.Timestamp" Title="Time" />
+
+                                                <!-- Dynamic Columns -->
+                                                @foreach (var column in dynamicColumns)
+                                                {
+
+                                                    <PropertyColumn Property="x => x.Fields[column]" Title="@column" />
+                                                }
+                                            </Columns>
+                                        </MudDataGrid>
                                     }
                                     else{
                                     <MudChart ChartType="@displayChart.chartType"
@@ -113,6 +129,8 @@
                                                   Height="350px"
                                               ChartOptions="@displayChart.options" />
                                     }
+                                    @if (@displayChart.chartType != ChartType.Donut)
+                                    {
                                         <MudGrid>
                                             <MudItem xs="6"> 
                                                  <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
@@ -121,6 +139,7 @@
                                                  <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
                                             </MudItem>
                                         </MudGrid>
+                                    }
                                     <MudGrid>
                                         <MudItem xs="6">
                                             <MudContainer Style="text-align: right;">
@@ -172,6 +191,7 @@
     int papers { get { return _papers; } set { UpdatePapers(value,12); } }
     public bool reOrdered = false;
     public bool updatebrk = false;
+    public List<string> dynamicColumns;
 
     protected async override Task OnInitializedAsync()
     {
@@ -392,26 +412,41 @@
                         {
 
                             Console.WriteLine($" dashboard charts:{dashboard_chart.chartTitle}");
-                            if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
+                            showChart = true;
+                            switch (dashboard_chart.chartType)
                             {
-                                showChart = true;
-                                var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
-                                lineSeriesData.chartTitle = dashboard_chart.chartTitle;
-                                lineSeriesData.chartId = dashboard_chart.chartID;
-                                lineSeriesData.chartType = dashboard_chart.chartType;
-                                allChartList.Add(lineSeriesData);
+                                case MudBlazor.ChartType.Line:
+                                    var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
+                                    lineSeriesData.chartTitle = dashboard_chart.chartTitle;
+                                    lineSeriesData.chartId = dashboard_chart.chartID;
+                                    lineSeriesData.chartType = dashboard_chart.chartType;
+
+                                    allChartList.Add(lineSeriesData);
+                                    break;
+
+                                case MudBlazor.ChartType.Timeseries:
+                                    startTime = DateTimeOffset.Now.AddDays(-5).Date;
+                                    endTime = DateTimeOffset.Now;
+
+                                    var timeSeriesData = await myChartService.GetTimeChartInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+                                    timeSeriesData.chartTitle = dashboard_chart.chartTitle;
+                                    timeSeriesData.chartId = dashboard_chart.chartID;
+                                    timeSeriesData.chartType = MudBlazor.ChartType.Timeseries;
+
+                                    allChartList.Add(timeSeriesData);
+                                    break;
+
+                                default:
+                                    startTime = DateTimeOffset.Now.AddDays(-5).Date;
+                                    endTime = DateTimeOffset.Now;
+                                    var rawData = await myChartService.GetRawDataInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+                                    rawData.chartTitle = dashboard_chart.chartTitle;
+                                    rawData.chartId = dashboard_chart.chartID;
+                                    dynamicColumns = rawData.rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
+                                    allChartList.Add(rawData);
+                                    break;
                             }
-                            else if (dashboard_chart.chartType == MudBlazor.ChartType.Timeseries)
-                            {
-                                showChart = true;
-                                startTime = DateTimeOffset.Now.AddDays(-5).Date;
-                                endTime = DateTimeOffset.Now;
-                                var timeSeriesData = await myChartService.GetTimeChartInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
-                                timeSeriesData.chartTitle = dashboard_chart.chartTitle;
-                                timeSeriesData.chartId = dashboard_chart.chartID;
-                                timeSeriesData.chartType = MudBlazor.ChartType.Timeseries;
-                                allChartList.Add(timeSeriesData);
-                            }
+
                         }
                     }
                 }
@@ -481,14 +516,15 @@
             endTime = DateTimeOffset.Now;
             ReturnedDataChart = (QFChart)result.Data;
             var rawData = await myChartService.GetRawDataInfo(ReturnedDataChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
-           /* rawData.chartTitle = ReturnedDataChart.chartTitle;
+            rawData.chartTitle = ReturnedDataChart.chartTitle;
             rawData.chartId = ReturnedDataChart.chartID;
-            allChartList.Add(timeSeriesData);
+            dynamicColumns = rawData.rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
+            allChartList.Add(rawData);
 
             _papers = allChartList.Count;
 
             var chartDetail = new Dictionary<int, int>{
-                                 { ReturnedTimeChart.chartID, 3 }
+                                 { ReturnedDataChart.chartID, 3 }
                                 };
             if (chartDetail != null)
             {
@@ -511,7 +547,7 @@
                 }
                 showChart = true;
                 StateHasChanged();
-            }*/
+            }
         }
     }
 

@@ -201,7 +201,7 @@
                             @if (showComponent)
                             {
                                 <div>
-                                    <MudDataGrid Items="@rawDataList" Bordered="true" Hover="true" Striped="true" Dense="true">
+                                    <MudDataGrid Items="@chartSeriesData.rawDataList" Bordered="true" Hover="true" Striped="true" Dense="true">
                                         <Columns>
                                             <!-- Static Timestamp Column -->
                                             <PropertyColumn Property="x => x.Timestamp" Title="Time"/>
@@ -304,8 +304,8 @@
 
 
             /*Display chart*/
-            rawDataList = await myChartService.GetRawDataInfo(timeChartList, startTime, endTime);
-            dynamicColumns=rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
+            chartSeriesData = await myChartService.GetRawDataInfo(timeChartList, startTime, endTime);
+            dynamicColumns = chartSeriesData.rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
             showComponent = true;
 
 
@@ -341,7 +341,7 @@
         {
             QFChart cData = new QFChart();
             cData.chartTitle = ChartTitle;
-           
+          
             foreach (var timeChart in timeChartList)
             {
                 cData.chartDataStreamList.Add(timeChart);
