@@ -319,7 +319,7 @@
         lineChart.stream = selectedStream;
         lineChart.field = selectedField;
         lineChart.agr = selectedAgr;
-        if (!lineChartList.Any(p => p.stream == lineChart.stream && p.field == lineChart.field))
+        if (!lineChartList.Any(p => p.stream == lineChart.stream && p.field == lineChart.field && p.agr == lineChart.agr))
         {
             lineChartList.Add(lineChart);
 

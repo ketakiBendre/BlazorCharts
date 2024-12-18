@@ -91,8 +91,8 @@
                             var chartId = chartData.Keys.First(); 
                             var chartBreak = chartData[chartId];
 
-                            <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId" style="height: 100px;">
-                                <MudPaper>
+                            <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId">
+                                <MudPaper Class="p-2">
                                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
                                     @if (@displayChart.chartType == ChartType.Timeseries)
                                     {
@@ -524,7 +524,7 @@
             _papers = allChartList.Count;
 
             var chartDetail = new Dictionary<int, int>{
-                                 { ReturnedDataChart.chartID, 4}
+                                 { ReturnedDataChart.chartID, 3}
                                 };
             if (chartDetail != null)
             {
