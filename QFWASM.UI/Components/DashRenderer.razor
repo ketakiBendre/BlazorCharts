@@ -6,6 +6,8 @@
 @inject Services.MyChartService myChartService
 @inject ISnackbar Snackbar
 @inject HttpClient Http
+@using System.Text
+@inject IJSRuntime JSRuntime
 
 @* page common injects*@
 @inject NavigationManager _navigationManager
@@ -53,55 +55,54 @@
                                             var chartBreak = chartData[chartId];
 
                                             <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId">
-                                                <MudPaper>
+                                                <MudPaper Class="p-2">
                                                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
-                                                @if (@displayChart.chartType == ChartType.Timeseries)
-                                                {
-                                                    <MudTimeSeriesChart ChartType="@displayChart.chartType"
-                                                                        ChartSeries="@displayChart.tSeries"
-                                                                        @bind-SelectedIndex="@displayChart.Index"
-                                                                        XAxisLabels="@displayChart.xAxisLabels"
-                                                                        Width="100%"
-                                                                        Height="350px"
-                                                                        ChartOptions="@displayChart.options" CanHideSeries TimeLabelSpacing="TimeSpan.FromMinutes(5)" />
-                                                }
-                                                else if (@displayChart.chartType == ChartType.Donut)
-                                                {
-                                                    <MudDataGrid Items="@displayChart.rawDataList" Bordered="true" Hover="true" Striped="true" Dense="true">
-                                                        <Columns>
-                                                            <!-- Static Timestamp Column -->
-                                                            <PropertyColumn Property="x => x.Timestamp" Title="Time" />
-
-                                                            <!-- Dynamic Columns -->
-                                                            @foreach (var column in dynamicColumns)
-                                                            {
-
-                                                                <PropertyColumn Property="x => x.Fields[column]" Title="@column" />
-                                                            }
-                                                        </Columns>
-                                                    </MudDataGrid>
-                                                }
-                                                else
-                                                {
-                                                    <MudChart ChartType="@displayChart.chartType"
-                                                              ChartSeries="@displayChart.series"
-                                                              @bind-SelectedIndex="@displayChart.Index"
-                                                              XAxisLabels="@displayChart.xAxisLabels"
-                                                              Width="100%"
-                                                              Height="350px"
-                                                              ChartOptions="@displayChart.options" />
-                                                }
-                                                @if (@displayChart.chartType != ChartType.Donut)
-                                                {
-                                                    <MudGrid>
-                                                        <MudItem xs="6">
-                                                            <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
-                                                        </MudItem>
-                                                        <MudItem xs="6">
-                                                            <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
-                                                        </MudItem>
-                                                    </MudGrid>
-                                                }
+                                                    @if (@displayChart.chartType == ChartType.Timeseries)
+                                                    {
+                                                        <MudTimeSeriesChart ChartType="@displayChart.chartType"
+                                                                            ChartSeries="@displayChart.tSeries"
+                                                                            @bind-SelectedIndex="@displayChart.Index"
+                                                                            XAxisLabels="@displayChart.xAxisLabels"
+                                                                            Width="100%"
+                                                                            Height="350px"
+                                                                            ChartOptions="@displayChart.options" CanHideSeries TimeLabelSpacing="TimeSpan.FromMinutes(5)" />
+                                                    }
+                                                    else if (@displayChart.chartType == ChartType.Donut)
+                                                    {
+                                                        <MudStack Spacing="1">
+                                                            <MudIconButton Variant="Variant.Filled" Icon="@Icons.Material.Filled.FileDownload" Color="Color.Default" Style="width: 30px; height: 20px;" OnClick="(() => DownloadCsv(displayChart.rawDataList))" />
+                                                            <MudDataGrid Items="@displayChart.rawDataList" Hover="true" Bordered="true" Striped="true" Dense="true" SortMode="SortMode.Single" Virtualize="true" FixedHeader="true">
+                                                                <Columns>
+                                                                    <PropertyColumn Property="x => x.Timestamp" Title="Time" />
+                                                                    @foreach (var column in dynamicColumns)
+                                                                    {
+                                                                        <PropertyColumn Property="x => x.Fields[column]" Title="@column" Sortable="false" />
+                                                                    }
+                                                                </Columns>
+                                                            </MudDataGrid>
+                                                        </MudStack>
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudChart ChartType="@displayChart.chartType"
+                                                                  ChartSeries="@displayChart.series"
+                                                                  @bind-SelectedIndex="@displayChart.Index"
+                                                                  XAxisLabels="@displayChart.xAxisLabels"
+                                                                  Width="100%"
+                                                                  Height="350px"
+                                                                  ChartOptions="@displayChart.options" />
+                                                    }
+                                                    @if (@displayChart.chartType != ChartType.Donut)
+                                                    {
+                                                        <MudGrid>
+                                                            <MudItem xs="6">
+                                                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
+                                                            </MudItem>
+                                                            <MudItem xs="6">
+                                                                <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
+                                                            </MudItem>
+                                                        </MudGrid>
+                                                    }
                                                     <MudGrid>
                                                         <MudItem xs="6">
                                                             <MudContainer Style="text-align: right;">
@@ -179,6 +180,8 @@
     private List<ChartSeriesData> allChartList = new List<ChartSeriesData>();
     public List<string> dynamicColumns;
 
+    
+    
     protected async override Task OnInitializedAsync()
     {
         // Get the URI of the current request
@@ -189,6 +192,8 @@
         updatebrk = false;
         ds = await getDashboard(clusterid, dashboardName);
     }
+
+    
 
 
     void UpdateBreaks(int dashboardId, int chartIndex, int changeAmount)
@@ -321,7 +326,40 @@
         }
         return oldDash;
     }
+    private async Task DownloadFile(string content, string fileName)
+    {
+        await JSRuntime.InvokeVoidAsync("downloadFile", content, fileName);
+    }
 
+    private async Task DownloadCsv(List<RawData> rawDataList)
+    {
+        var csvContent = GenerateCsv(rawDataList);
+        var fileName = "DataGridExport.csv";
+        await DownloadFile(csvContent, fileName);
+    }
+
+    private string GenerateCsv(List<RawData> data)
+    {
+        if (data == null || !data.Any()) return string.Empty;
+
+        var csvBuilder = new StringBuilder();
+        var headers = new List<string> { "Timestamp" }.Concat(dynamicColumns).ToList();
+        csvBuilder.AppendLine(string.Join(",", headers));
+
+        foreach (var rawData in data)
+        {
+            var values = new List<string>
+            {
+                rawData.Timestamp.ToString()
+            };
+            values.AddRange(dynamicColumns.Select(c => rawData.Fields.TryGetValue(c, out var value) ? value?.ToString() : ""));
+            csvBuilder.AppendLine(string.Join(",", values));
+        }
+
+        return csvBuilder.ToString();
+    }
+
+    
     void ShowAlert(string message, string position, Severity sev)
     {
         Snackbar.Clear();

@@ -140,6 +140,8 @@ namespace QFWASM.UI.Services
                     Fields = JsonSerializer.Deserialize<Dictionary<string, object>>(dict["result"].ToString())
                 }).ToList();
                 chartSeriesData.rawDataList = rawDataList;
+
+
             }
             return chartSeriesData;
         }
