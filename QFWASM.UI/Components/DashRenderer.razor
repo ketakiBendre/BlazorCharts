@@ -103,14 +103,6 @@
                                                             </MudItem>
                                                         </MudGrid>
                                                     }
-                                                    <MudGrid>
-                                                        <MudItem xs="6">
-                                                            <MudContainer Style="text-align: right;">
-                                                                <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, -1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" />
-                                                                <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" OnClick="(()=>UpdateBreaks(ds.dashid, localindex, 1))" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" />
-                                                            </MudContainer>
-                                                        </MudItem>
-                                                    </MudGrid>
                                                 </MudPaper>
                                             </MudItem>
                                         }
@@ -285,7 +277,7 @@
                             switch (dashboard_chart.chartType)
                             {
                                 case MudBlazor.ChartType.Line:
-                                    var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
+                                    var lineSeriesData = await myChartService.GetLineChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                     lineSeriesData.chartTitle = dashboard_chart.chartTitle;
                                     lineSeriesData.chartId = dashboard_chart.chartID;
                                     lineSeriesData.chartType = dashboard_chart.chartType;

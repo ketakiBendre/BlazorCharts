@@ -108,7 +108,7 @@
                             if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
                             {
                                 showLineChart = true;
-                                var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
+                                var lineSeriesData = await myChartService.GetLineChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                 lineSeriesData.chartTitle = dashboard_chart.chartTitle;
                                // var chartPosition = oldDash.QFChartList.SelectMany(chartDict => chartDict)
                                   //                           .FirstOrDefault(kvp => kvp.Key == dashboard_chart.chartID).Value;

@@ -416,7 +416,7 @@
                             switch (dashboard_chart.chartType)
                             {
                                 case MudBlazor.ChartType.Line:
-                                    var lineSeriesData = await myChartService.GetChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
+                                    var lineSeriesData = await myChartService.GetLineChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                     lineSeriesData.chartTitle = dashboard_chart.chartTitle;
                                     lineSeriesData.chartId = dashboard_chart.chartID;
                                     lineSeriesData.chartType = dashboard_chart.chartType;
@@ -621,7 +621,7 @@
         {
 
             ReturnedLineChart = (QFChart) result.Data;
-            var lineSeriesData = await myChartService.GetChartInfo(ReturnedLineChart.chartDataStreamList.Cast<LineChartData>().ToList());
+            var lineSeriesData = await myChartService.GetLineChartInfo(ReturnedLineChart.chartDataStreamList.Cast<LineChartData>().ToList());
             lineSeriesData.chartTitle = ReturnedLineChart.chartTitle;
             lineSeriesData.chartId = ReturnedLineChart.chartID;
             lineSeriesData.chartType = MudBlazor.ChartType.Line;

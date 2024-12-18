@@ -325,7 +325,7 @@
 
 
             /*Display chart*/
-            chartSeriesData = await myChartService.GetChartInfo(lineChartList);
+            chartSeriesData = await myChartService.GetLineChartInfo(lineChartList);
             showComponent = true;
 
 
@@ -342,7 +342,7 @@
     {
         lineChartList.Remove(DeleteEStream);
         /*Display chart*/
-        chartSeriesData = myChartService.RemoveChartInfo(DeleteEStream);
+        chartSeriesData = myChartService.RemoveLineChartInfo(DeleteEStream);
         showComponent = true;
     }
 

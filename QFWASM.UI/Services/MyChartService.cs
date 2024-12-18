@@ -22,10 +22,10 @@ namespace QFWASM.UI.Services
         {
             Http = httpClient;
         }
-        public async Task<ChartSeriesData> GetChartInfo(List<LineChartData> lineChartList)
+        public async Task<ChartSeriesData> GetLineChartInfo(List<LineChartData> lineChartList)
         {
             chartSeriesData = new ChartSeriesData();
-            var response = await Http.PostAsJsonAsync("api/Stream/getChartInfo", lineChartList);
+            var response = await Http.PostAsJsonAsync("api/Stream/getLineChartInfo", lineChartList);
             if (response.IsSuccessStatusCode)
             {
                 var resultList = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>();
@@ -59,7 +59,7 @@ namespace QFWASM.UI.Services
             return chartSeriesData;
         }
 
-        public ChartSeriesData RemoveChartInfo(ChartDataStream chartStream)
+        public ChartSeriesData RemoveLineChartInfo(ChartDataStream chartStream)
         {
             string removeKey = chartStream.field;
             if (chartStream is LineChartData lineChartData)
@@ -146,43 +146,7 @@ namespace QFWASM.UI.Services
             return chartSeriesData;
         }
 
-            public async Task<List<RawData>> GetRawDataInfo1(List<ChartDataStream> timeChartList, DateTimeOffset startTime, DateTimeOffset endTime)
-        {
-            // Initialize the result list
-            var rawDataList = new List<RawData>();
-
-            // Build query string with ISO 8601 format for DateTimeOffset
-            var queryString = $"?startTime={startTime:O}&endTime={endTime:O}";
-
-            try
-            {
-                // Send the POST request with the query string and serialized body
-                var response = await Http.PostAsJsonAsync($"api/Stream/get_raw_data{queryString}", timeChartList);
-
-                // Check if the response is successful
-                if (response.IsSuccessStatusCode)
-                {
-                    // Deserialize the response directly into a List<RawData>
-                    rawDataList = await response.Content.ReadFromJsonAsync<List<RawData>>()
-                                  ?? new List<RawData>();
-                }
-                else
-                {
-                    // Log or handle unsuccessful responses
-                    var error = await response.Content.ReadAsStringAsync();
-                    throw new HttpRequestException($"Request failed with status code {response.StatusCode}: {error}");
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log or handle exceptions
-                Console.WriteLine($"Error fetching raw data: {ex.Message}");
-                throw; // Rethrow the exception if necessary
-            }
-
-            return rawDataList;
-        }
-
+        
         public List<RawData> RemoveRawData(ChartDataStream chartStream, List<RawData> rawDataList)
         {
             string removeKey = chartStream.field;
