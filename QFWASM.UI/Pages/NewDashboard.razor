@@ -541,7 +541,6 @@
                 else
                 {
                     ds.QFChartList.Add(chartDetail);
-                    ds.QFChartListJson = JsonSerializer.Serialize(ds.QFChartList);
                     var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
                     if (response.IsSuccessStatusCode)
                     {
@@ -595,7 +594,6 @@
                 else
                 {
                     ds.QFChartList.Add(chartDetail);
-                    ds.QFChartListJson = JsonSerializer.Serialize(ds.QFChartList);
                     var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
                     if (response.IsSuccessStatusCode)
                     {
@@ -647,7 +645,6 @@
                 else
                 {
                     ds.QFChartList.Add(chartDetail);
-                    ds.QFChartListJson = JsonSerializer.Serialize(ds.QFChartList);
                     var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
                     if (response.IsSuccessStatusCode)
                     {
@@ -686,7 +683,16 @@
 
         if (TextValue != ds.dashName) ds.dashName = TextValue;
         if (Dense_Radio != (ds.dashType == "Unit Dashboard")) ds.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
-        if (updatebrk || reOrdered) ds.QFChartListJson = JsonSerializer.Serialize(ds.QFChartList);
+        if (updatebrk || reOrdered){
+            var serializedChartList = JsonSerializer.Serialize(ds.QFChartList);
+            var updatedDashboard = new
+            {
+                ds.dashid,
+                ds.dashName,
+                ds.dashType,
+                QFChartList = serializedChartList
+            };
+        }
 
         await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
         Navigation.NavigateTo("/managedash");

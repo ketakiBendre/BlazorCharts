@@ -82,49 +82,86 @@ namespace Quantaflare.API.Controllers
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
-                var parameters = new { clusterId, dashname };
-                var dashboardDetail = connection.QuerySingleOrDefault<Dashboard>(
-    "SELECT dashid, clusterid, createdon, dashname, dashtype, chartinfo AS QFChartListJson FROM dashboard WHERE clusterid = @clusterId AND dashname = @dashname",
-    parameters
-);
 
-                if (dashboardDetail != null)
+                var parameters = new { clusterId, dashname };
+
+                var sql = @"
+            SELECT dashid, 
+                   clusterid, 
+                   createdon, 
+                   dashname, 
+                   dashtype, 
+                   chartinfo 
+            FROM dashboard 
+            WHERE clusterid = @clusterId AND dashname = @dashname";
+
+                // Query the raw data
+                var rawDashboard = connection.QuerySingleOrDefault(sql, parameters);
+
+                if (rawDashboard == null)
+                    return NotFound();
+
+                // Map the raw data to a Dashboard object
+                var dashboard = new Dashboard
                 {
-                    dashboardDetail.DeserializeQFChartList(); // Call the method to deserialize the QFChartList
+                    dashid = rawDashboard.dashid,
+                    clusterId = rawDashboard.clusterid,
+                    createdOn = rawDashboard.createdon,
+                    dashName = rawDashboard.dashname,
+                    dashType = rawDashboard.dashtype,
+                };
+
+                // Deserialize the chartinfo (JSON) into QFChartList
+                if (!string.IsNullOrEmpty(rawDashboard.chartinfo))
+                {
+                    dashboard.QFChartList = JsonSerializer.Deserialize<List<Dictionary<int, int>>>(rawDashboard.chartinfo);
                 }
-                return Ok(dashboardDetail);
+
+                return Ok(dashboard);
             }
         }
+
 
         [HttpPost]
         [Route("PostDashboard")]
         public IActionResult PostDashboard(Dashboard ds)
-         {
-            
+        {
             using (var connection = new NpgsqlConnection(_connectionString))
-             {
+            {
                 connection.Open();
+
+                // Serialize QFChartList to JSON
                 var jsonData = JsonSerializer.Serialize(ds.QFChartList);
-                var sql = @"INSERT INTO dashboard (clusterid, createdon, dashname, dashtype,chartinfo) 
-                    VALUES (@clusterId, @createdOn, @dashName, @dashType,@jsonData::json) 
-                    RETURNING dashid;";
+
+                // Define SQL query with parameterized JSON
+                var sql = @"
+            INSERT INTO dashboard (clusterid, createdon, dashname, dashtype, chartinfo)
+            VALUES (@ClusterId, @CreatedOn, @DashName, @DashType, @ChartInfo::jsonb)
+            RETURNING dashid;";
 
                 var parameters = new
                 {
-                    clusterId = ds.clusterId,
-                    createdOn = DateTime.UtcNow, // Assuming you want to use the current UTC time
-                    dashName = ds.dashName,
-                    dashType = ds.dashType,
-                    jsonData = jsonData
+                    ClusterId = ds.clusterId,
+                    CreatedOn = DateTime.UtcNow,
+                    DashName = ds.dashName,
+                    DashType = ds.dashType,
+                    ChartInfo = jsonData // Serialized JSON string
                 };
 
-                // Execute the query and capture the returned ID
-                var dashboardId = connection.ExecuteScalar<int>(sql, parameters);
-
-                // Return the dashboard ID
-                return Ok(dashboardId);
+                try
+                {
+                    // Execute query and get the inserted dashboard ID
+                    var dashboardId = connection.ExecuteScalar<int>(sql, parameters);
+                    return Ok(dashboardId);
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"An error occurred: {ex.Message}");
+                }
             }
-         }
+        }
+
+
 
         [HttpPost]
         [Route("UpdateDashboard")]
@@ -133,24 +170,29 @@ namespace Quantaflare.API.Controllers
             var updates = new List<string>();
             var parameters = new DynamicParameters();
 
+            // Update `dashName` if provided
             if (!string.IsNullOrEmpty(request.dashName))
             {
                 updates.Add("dashname = @DashName");
                 parameters.Add("DashName", request.dashName);
             }
 
+            // Update `dashType` if provided
             if (!string.IsNullOrEmpty(request.dashType))
             {
                 updates.Add("dashtype = @DashType");
                 parameters.Add("DashType", request.dashType);
             }
 
-            if (!string.IsNullOrEmpty(request.QFChartListJson))
+            // Serialize `QFChartList` and update it
+            if (request.QFChartList != null && request.QFChartList.Count > 0)
             {
-                updates.Add("chartinfo = @QFChartListJson::jsonb");
-                parameters.Add("QFChartListJson", request.QFChartListJson);
+                var chartListJson = JsonSerializer.Serialize(request.QFChartList);
+                updates.Add("chartinfo = @ChartInfo::jsonb"); // Ensure it's saved as JSONB in PostgreSQL
+                parameters.Add("ChartInfo", chartListJson, DbType.String);
             }
 
+            // Build the SQL query
             var sql = $"UPDATE dashboard SET {string.Join(", ", updates)} WHERE clusterid = @ClusterId AND dashid = @DashId";
             parameters.Add("ClusterId", request.clusterId);
             parameters.Add("DashId", request.dashid);
@@ -163,7 +205,9 @@ namespace Quantaflare.API.Controllers
             }
         }
 
-        
+
+
+
 
         [HttpGet]
         [Route("getCluster")]
