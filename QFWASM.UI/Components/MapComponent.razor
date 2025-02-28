@@ -32,7 +32,7 @@
             <MudButton Variant="Variant.Filled" OnClick="ShowMap">Show Map</MudButton>
         }
         <MudItem xs="6" sm="12" md="12" Class="mb-4">
-            <MudRadioGroup @bind-Value="selectedOption" Label="Choose Option" Color="Primary" >
+            <MudRadioGroup @bind-Value="selectedOption" Label="Choose Option" Color="Primary" Disabled="!isLocationValid">
                 <MudRadio Value="true" Color="Color.Primary" Dense="true">Current Location</MudRadio>
                 <MudRadio Value="false" Color="Color.Secondary" Dense="false">Full Route</MudRadio>
             </MudRadioGroup>
@@ -64,7 +64,7 @@
     private LocationDetails loc = new LocationDetails();
     public bool _selectedOption { get; set; } = true;
     private List<ChartDataStream> mapDataList = new List<ChartDataStream>();
-
+    private bool isLocationValid = false;
     private bool selectedOption
     {
         get => _selectedOption;
@@ -91,50 +91,7 @@
         }
     }
 
-    /*protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if ((firstRender || selectedOption != previousSelectedOption) && locationDetailsList.Count > 0)
-        {
-            if (selectedOption)
-            {
-                await ShowMap((locationDetailsList.LastOrDefault()));  // For current location
-            }
-            else
-            {
-                await ShowMap(locationDetailsList);  // For whole route
-            }
-        }
-        // Store the previous selection for comparison to avoid unnecessary rerenders
-        previousSelectedOption = selectedOption;
-        await base.OnAfterRenderAsync(firstRender);
-    }
-    private bool previousSelectedOption;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        ChartDataStream mapData = new ChartDataStream();
-        mapData.stream = "Location";
-        mapData.field = "Lat";
-        mapDataList.Add(mapData);
-
-        mapData = new ChartDataStream();
-        mapData.stream = "Location";
-        mapData.field = "Long";
-        mapDataList.Add(mapData);
-        if (locationDetailsList.Count > 0)
-        {
-    if (selectedOption)
-    {
-        await ShowMap(locationDetailsList.LastOrDefault());  // For current location
-        }
-    else
-    {
-        await ShowMap(locationDetailsList);  // For whole route
-        }
-    }
-    }*/
 
     private async Task ShowMap()
     {
@@ -142,20 +99,25 @@
     double.TryParse(Longitude, out var lng) &&
     double.TryParse(ZoomLevel, out var zoom))
         {
-    await JSRuntime.InvokeVoidAsync("initializeMapbox", lat, lng, zoom);
+            loc.Latitude = lat;
+            loc.Longitude = lng;
+            isLocationValid = true;
+            StateHasChanged();
+            await JSRuntime.InvokeVoidAsync("initializeMapbox", lat, lng, zoom);
         }
         else
         {
-    Console.WriteLine($"Invalid input: {Latitude}, {Longitude}, 12");
+            Console.WriteLine($"Invalid input: {Latitude}, {Longitude}, 12");
         }
     }
 
-   private async Task ShowMapRoute()
+    private async Task ShowMapRoute()
     {
 
 
         if ( loc != null)
         {
+
             Random random = new Random();
             var locations = new List<Location>();
 
@@ -174,7 +136,7 @@
         }
         else
         {
-           Console.WriteLine("No locations to plot.");
+            Console.WriteLine("No locations to plot.");
         }
     }
 
@@ -182,11 +144,13 @@
     {
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
-    var location = await GetCoordinatesFromMapbox(SearchQuery);
-    if (location != null)
-    {
-        loc.Latitude = location.Latitude;
-        loc.Longitude = location.Longitude;
+            var location = await GetCoordinatesFromMapbox(SearchQuery);
+            if (location != null)
+            {
+                loc.Latitude = location.Latitude;
+                loc.Longitude = location.Longitude;
+                isLocationValid = true;
+                StateHasChanged();
         Console.WriteLine($"Calling initializeMapbox with: {location.Latitude}, {location.Longitude}, 12");
                 // Call the JavaScript function
                 await JSRuntime.InvokeVoidAsync("initializeMapbox", location.Latitude, location.Longitude, 12);
