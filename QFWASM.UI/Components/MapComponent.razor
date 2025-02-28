@@ -16,24 +16,29 @@
         <strong>Map Component</strong>
     </TitleContent>
     <DialogContent>
-<MudItem xs="6" sm="12" md="12" Class="mb-4">
-    <MudSwitch @bind-Value="searchLoc" Label="Search By Location" />
-</MudItem>
-@if (searchLoc)
-{
-    <MudTextField @bind-Value="SearchQuery" Placeholder="Enter a location" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
-    <MudButton Variant="Variant.Filled" OnClick="SearchLocation">Search</MudButton>
-}
-else
-{
-    <MudTextField @bind-Value="Latitude" Placeholder="Enter Latitude" />
-    <MudTextField @bind-Value="Longitude" Placeholder="Enter Longitude" />
-    <MudTextField @bind-Value="ZoomLevel" Placeholder="Enter Zoom Level" />
-    <MudButton Variant="Variant.Filled" OnClick="ShowMap">Show Map</MudButton>
-}
-
-<div id="map" style="width: 100%; height: 500px;" @after="OnMapContainerRendered"></div>
-</DialogContent>
+        <MudItem xs="6" sm="12" md="12" Class="mb-4">
+            <MudSwitch @bind-Value="searchLoc" Label="Search By Location" />
+        </MudItem>
+        @if (searchLoc)
+        {
+            <MudTextField @bind-Value="SearchQuery" Placeholder="Enter a location" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+            <MudButton Variant="Variant.Filled" OnClick="SearchLocation">Search</MudButton>
+        }
+        else
+        {
+            <MudTextField @bind-Value="Latitude" Placeholder="Enter Latitude" />
+            <MudTextField @bind-Value="Longitude" Placeholder="Enter Longitude" />
+            <MudTextField @bind-Value="ZoomLevel" Placeholder="Enter Zoom Level" />
+            <MudButton Variant="Variant.Filled" OnClick="ShowMap">Show Map</MudButton>
+        }
+        <MudItem xs="6" sm="12" md="12" Class="mb-4">
+            <MudRadioGroup @bind-Value="selectedOption" Label="Choose Option" Color="Primary" >
+                <MudRadio Value="true" Color="Color.Primary" Dense="true">Current Location</MudRadio>
+                <MudRadio Value="false" Color="Color.Secondary" Dense="false">Full Route</MudRadio>
+            </MudRadioGroup>
+        </MudItem>
+        <div id="map" style="width: 100%; height: 500px;" @after="OnMapContainerRendered"></div>
+    </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="Close">Close</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
@@ -55,31 +60,134 @@ else
     private string Longitude { get; set; }
     private string ZoomLevel { get; set; } = "12"; // Default zoom level
     private bool searchLoc { get; set; } = false;
+    private List<LocationDetails> locationDetailsList = new List<LocationDetails>();
+    private LocationDetails loc = new LocationDetails();
+    public bool _selectedOption { get; set; } = true;
+    private List<ChartDataStream> mapDataList = new List<ChartDataStream>();
+
+    private bool selectedOption
+    {
+        get => _selectedOption;
+        set
+        {
+            if (_selectedOption != value)
+            {
+                _selectedOption = value;
+                OnOptionChanged(_selectedOption);
+            }
+        }
+    }
+
+    private async Task OnOptionChanged(bool newValue)
+    {
+        Console.WriteLine($"Selected option changed to: {newValue}");
+        if (newValue)
+        {
+            await ShowMap();
+        }
+        else
+        {
+            await ShowMapRoute();
+        }
+    }
+
+    /*protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if ((firstRender || selectedOption != previousSelectedOption) && locationDetailsList.Count > 0)
+        {
+            if (selectedOption)
+            {
+                await ShowMap((locationDetailsList.LastOrDefault()));  // For current location
+            }
+            else
+            {
+                await ShowMap(locationDetailsList);  // For whole route
+            }
+        }
+        // Store the previous selection for comparison to avoid unnecessary rerenders
+        previousSelectedOption = selectedOption;
+        await base.OnAfterRenderAsync(firstRender);
+    }
+    private bool previousSelectedOption;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        ChartDataStream mapData = new ChartDataStream();
+        mapData.stream = "Location";
+        mapData.field = "Lat";
+        mapDataList.Add(mapData);
+
+        mapData = new ChartDataStream();
+        mapData.stream = "Location";
+        mapData.field = "Long";
+        mapDataList.Add(mapData);
+        if (locationDetailsList.Count > 0)
+        {
+    if (selectedOption)
+    {
+        await ShowMap(locationDetailsList.LastOrDefault());  // For current location
+        }
+    else
+    {
+        await ShowMap(locationDetailsList);  // For whole route
+        }
+    }
+    }*/
 
     private async Task ShowMap()
     {
         if (double.TryParse(Latitude, out var lat) &&
-            double.TryParse(Longitude, out var lng) &&
-            double.TryParse(ZoomLevel, out var zoom))
+    double.TryParse(Longitude, out var lng) &&
+    double.TryParse(ZoomLevel, out var zoom))
         {
-            await JSRuntime.InvokeVoidAsync("initializeMapbox", lat, lng, zoom);
+    await JSRuntime.InvokeVoidAsync("initializeMapbox", lat, lng, zoom);
         }
         else
         {
-            Console.WriteLine($"Invalid input: {Latitude}, {Longitude}, 12");
+    Console.WriteLine($"Invalid input: {Latitude}, {Longitude}, 12");
         }
     }
 
+   private async Task ShowMapRoute()
+    {
 
+
+        if ( loc != null)
+        {
+            Random random = new Random();
+            var locations = new List<Location>();
+
+            // Generate 5 random locations
+            for (int i = 0; i < 5; i++)
+            {
+                locations.Add(new Location
+                                    {
+                                        Latitude = loc.Latitude + (random.NextDouble() * 0.1) - 0.05,  // Small variation
+                                        Longitude = loc.Longitude + (random.NextDouble() * 0.1) - 0.05
+                                    });
+            }
+            var json = JsonSerializer.Serialize(locations);
+            await JSRuntime.InvokeVoidAsync("initializeMapboxWithRoute", JsonDocument.Parse(json).RootElement);
+
+        }
+        else
+        {
+           Console.WriteLine("No locations to plot.");
+        }
+    }
 
     private async Task SearchLocation()
     {
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
-            var location = await GetCoordinatesFromMapbox(SearchQuery);
-            if (location != null)
-            {
-                Console.WriteLine($"Calling initializeMapbox with: {location.Latitude}, {location.Longitude}, 12");
+    var location = await GetCoordinatesFromMapbox(SearchQuery);
+    if (location != null)
+    {
+        loc.Latitude = location.Latitude;
+        loc.Longitude = location.Longitude;
+        Console.WriteLine($"Calling initializeMapbox with: {location.Latitude}, {location.Longitude}, 12");
                 // Call the JavaScript function
                 await JSRuntime.InvokeVoidAsync("initializeMapbox", location.Latitude, location.Longitude, 12);
             }
