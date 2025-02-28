@@ -1,38 +1,44 @@
-﻿@page "/example"
-@using MudBlazor
-@inject IJSRuntime JSRuntime;
+﻿﻿@using MudBlazor
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@inject Services.MapboxService MapboxService
+@inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
+@using Quantaflare.Data
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+@using System.Text
+@inject Services.MyChartService myChartService
 
-@*<MudDialog>
+<MudDialog>
     <TitleContent>
         <strong>Map Component</strong>
     </TitleContent>
-    <DialogContent>*@
-        <MudItem xs="6" sm="12" md="12" Class="mb-4">
-            <MudSwitch @bind-Value="searchLoc" Label="Search By Location" />
-        </MudItem>
-        @if (searchLoc)
-        {
-            <MudTextField @bind-Value="SearchQuery" Placeholder="Enter a location" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
-            <MudButton Variant="Variant.Filled" OnClick="SearchLocation">Search</MudButton>
-        }
-        else
-        {
-            <MudTextField @bind-Value="Latitude" Placeholder="Enter Latitude" />
-            <MudTextField @bind-Value="Longitude" Placeholder="Enter Longitude" />
-            <MudTextField @bind-Value="ZoomLevel" Placeholder="Enter Zoom Level" />
-            <MudButton Variant="Variant.Filled" OnClick="ShowMap">Show Map</MudButton>
-        }
+    <DialogContent>
+<MudItem xs="6" sm="12" md="12" Class="mb-4">
+    <MudSwitch @bind-Value="searchLoc" Label="Search By Location" />
+</MudItem>
+@if (searchLoc)
+{
+    <MudTextField @bind-Value="SearchQuery" Placeholder="Enter a location" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+    <MudButton Variant="Variant.Filled" OnClick="SearchLocation">Search</MudButton>
+}
+else
+{
+    <MudTextField @bind-Value="Latitude" Placeholder="Enter Latitude" />
+    <MudTextField @bind-Value="Longitude" Placeholder="Enter Longitude" />
+    <MudTextField @bind-Value="ZoomLevel" Placeholder="Enter Zoom Level" />
+    <MudButton Variant="Variant.Filled" OnClick="ShowMap">Show Map</MudButton>
+}
 
-        <div id="map" style="width: 100%; height: 500px;" @after="OnMapContainerRendered"></div>
-    @*</DialogContent>
+<div id="map" style="width: 100%; height: 500px;" @after="OnMapContainerRendered"></div>
+</DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Text" Color="Color.Primary">Close</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="Close">Close</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
     </DialogActions>
-</MudDialog>*@
+</MudDialog>
 @code {
     [CascadingParameter]
     public MudDialogInstance MudDialog { get; set; }

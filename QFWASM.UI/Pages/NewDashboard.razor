@@ -50,12 +50,12 @@
                         <MudIconButton Target="_blank"
                                    Variant="Variant.Outlined"
                                    Icon="@Icons.Material.Filled.BarChart"
-                                       Color="Color.Primary" OnClick="BarChartPaper" Class="big-icon-button mr-5" />
+                                       Color="Color.Primary" OnClick="BarChartPaper" Class="big-icon-button mr-5" Disabled="true" />
                             
                         <MudIconButton Target="_blank"
                                        Variant="Variant.Outlined"
                                    Icon="@Icons.Material.Filled.PieChart"
-                                       Color="Color.Primary" aria-label="PieChart" Class="big-icon-button mr-5" />
+                                       Color="Color.Primary" aria-label="PieChart" Class="big-icon-button mr-5" Disabled="true" />
                         <MudIconButton Target="_blank"
                                        Variant="Variant.Outlined"
                                        Icon="@Icons.Material.Filled.TableChart"
@@ -64,7 +64,10 @@
                                        Variant="Variant.Outlined"
                                        Icon="@Icons.Material.Filled.Dataset"
                                        Color="Color.Primary" OnClick="RawDataPaper" Class="big-icon-button mr-5" />
-
+                        <MudIconButton Target="_blank"
+                                       Variant="Variant.Outlined"
+                                       Icon="@Icons.Material.Filled.Map"
+                                       Color="Color.Primary" OnClick="MapPaper" Class="big-icon-button mr-5" />
                     </MudItem>
                     
                 </MudGrid>
@@ -188,7 +191,18 @@
     private List<ChartSeriesData> allChartList = new List<ChartSeriesData>();
 
     int _papers = 0;
-    int papers { get { return _papers; } set { UpdatePapers(value,12); } }
+   // int papers { get { return _papers; } set { UpdatePapers(value,12); } }
+    int papers
+    {
+        get { return _papers; }
+        set
+        {
+            if (ds != null)
+            {
+                UpdatePapers(ds.dashid, 12); // Pass the correct Guid value
+            }
+        }
+    }
     public bool reOrdered = false;
     public bool updatebrk = false;
     public List<string> dynamicColumns;
@@ -290,7 +304,7 @@
         return $"{chartBreak * 50}px";
     }
 
-    void UpdateBreaks(int dashboardId, int chartIndex, int changeAmount)
+    void UpdateBreaks(Guid dashboardId, int chartIndex, int changeAmount)
     {
         if (ds == null || ds.dashid != dashboardId) return;
 
@@ -318,9 +332,9 @@
         }
     }
 
-    void UpdatePapers(int dashboardId, int chartCount)
+    void UpdatePapers(Guid dashboardId, int chartCount)
     {
-        if (ds == null || ds.dashid != dashboardId) return;
+        if (ds == null || !ds.dashid.Equals(dashboardId)) return;
 
         // Adjust the number of charts in QFChartList
         while (ds.QFChartList.Count < chartCount)
@@ -356,7 +370,7 @@
             var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", newDash);
             if (response.IsSuccessStatusCode)
             {
-                newDash.dashid = await response.Content.ReadFromJsonAsync<int>();
+                newDash.dashid = await response.Content.ReadFromJsonAsync<Guid>();
                 return newDash;
             }
 
@@ -501,6 +515,58 @@
         return newDashName;
     }
 
+    private async Task MapPaper()
+    {
+        QFChart ReturnedDataChart = new QFChart();
+        var parameters = new DialogParameters()
+        {
+            { "Title", "Show Map" },
+            {"ClusterId", clusterid}
+        };
+        var dialog = DialogService.Show<Components.MapComponent>("Custom Options Dialog", parameters, _maxWidth);
+
+        var result = await dialog.Result;
+        if (result.Data != null && !result.Canceled)
+        {
+
+            ReturnedDataChart = (QFChart)result.Data;
+           /* var mapDataList = await myChartService.GetMapDataInfo();
+            mapDataList.chartTitle = ReturnedDataChart.chartTitle;
+            mapDataList.chartId = ReturnedDataChart.chartID;
+            mapDataList.chartType = MudBlazor.ChartType.StackedBar;
+            allChartList.Add(mapDataList);*/
+
+            _papers = allChartList.Count;
+
+            var chartDetail = new Dictionary<int, int>{
+                                 { ReturnedDataChart.chartID, 3}
+                                };
+            if (chartDetail != null)
+            {
+
+                if (ds == null)
+                {
+                    ds = await CreateNewDashboard(chartDetail);
+
+                }
+                else
+                {
+                    ds.QFChartList.Add(chartDetail);
+                    var response = await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var rowsAffected = await response.Content.ReadFromJsonAsync<int>();
+                        Console.WriteLine($"Received Cluster ID: {rowsAffected}");
+                    }
+                }
+
+
+                //ShowMap(mapDataList.locationDetailsList);
+                showChart = true;
+                StateHasChanged();
+            }
+        }
+    }
 
     private async Task RawDataPaper()
     {

@@ -24,7 +24,10 @@ namespace QFWASM.UI
             });
 
             builder.Services.AddMudServices();
-
+            builder.Services.AddScoped(sp => new MapboxService(
+    sp.GetRequiredService<HttpClient>(),
+    "pk.eyJ1IjoicWZzZXJ2aWNlIiwiYSI6ImNtNXZlZXFuajAxMW4yanE2NXlkYzVjYjQifQ.yt3RAlNbu7pOWYH2imLdJA"
+));
 
             await builder.Build().RunAsync();
         }

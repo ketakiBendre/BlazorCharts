@@ -188,7 +188,7 @@
     
 
 
-    void UpdateBreaks(int dashboardId, int chartIndex, int changeAmount)
+    void UpdateBreaks(Guid dashboardId, int chartIndex, int changeAmount)
     {
         if (ds == null || ds.dashid != dashboardId) return;
 
@@ -216,9 +216,9 @@
         }
     }
 
-    void UpdatePapers(int dashboardId, int chartCount)
+    void UpdatePapers(Guid dashboardId, int chartCount)
     {
-        if (ds == null || ds.dashid != dashboardId) return;
+        if (ds == null || !ds.dashid.Equals(dashboardId)) return;
 
         // Adjust the number of charts in QFChartList
         while (ds.QFChartList.Count < chartCount)

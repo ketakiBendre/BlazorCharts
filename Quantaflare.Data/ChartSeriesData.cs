@@ -24,5 +24,6 @@ namespace Quantaflare.Data
         public List<TimeSeriesChartSeries> tSeries= new List<TimeSeriesChartSeries>();
 
         public List<RawData> rawDataList = new List<RawData>();
+        public List<LocationDetails> locationDetailsList = new List<LocationDetails>();
     }
 }
