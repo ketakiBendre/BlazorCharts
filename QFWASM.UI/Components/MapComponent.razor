@@ -13,9 +13,15 @@
 
 <MudDialog>
     <TitleContent>
-        <strong>Map Component</strong>
+        <strong>@Title</strong>
     </TitleContent>
     <DialogContent>
+        <MudItem xs="6" sm="12" md="12">
+            <MudText Typo="Typo.h5" Color="Color.Primary">Adding a Map for Battery Location</MudText>
+        </MudItem>
+        <MudItem xs="6" sm="12" md="12">
+            <MudTextField @bind-Value="ChartTitle" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
+        </MudItem>
         <MudItem xs="6" sm="12" md="12" Class="mb-4">
             <MudSwitch @bind-Value="searchLoc" Label="Search By Location" />
         </MudItem>
@@ -151,7 +157,7 @@
                 loc.Longitude = location.Longitude;
                 isLocationValid = true;
                 StateHasChanged();
-        Console.WriteLine($"Calling initializeMapbox with: {location.Latitude}, {location.Longitude}, 12");
+                Console.WriteLine($"Calling initializeMapbox with: {location.Latitude}, {location.Longitude}, 12");
                 // Call the JavaScript function
                 await JSRuntime.InvokeVoidAsync("initializeMapbox", location.Latitude, location.Longitude, 12);
             }
@@ -188,6 +194,31 @@
         if (string.IsNullOrEmpty(ChartTitle))
         {
             ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight);
+        }
+        else
+        {
+            QFChart cData = new QFChart();
+            cData.chartTitle = ChartTitle;
+            cData.chartType = MudBlazor.ChartType.StackedBar;
+            cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Lat" });
+            cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Long" });
+            var response = await Http.PostAsJsonAsync("api/Stream/PostQFChart", cData);
+            if (response.IsSuccessStatusCode)
+            {
+                int chartId = await response.Content.ReadFromJsonAsync<int>(); // Read the returned chartId
+                if (chartId > -1) // Check if a valid chartId was returned
+                {
+                    cData.chartID = chartId;
+                    MudDialog.Close(DialogResult.Ok(cData));
+                    ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight);
+                }
+            }
+            else
+            {
+                // Handle the error response (optional)
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight);
+            }
         }
     }
 
