@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using System.Transactions;
 using static MudBlazor.CategoryTypes;
 
 
@@ -220,6 +221,96 @@ namespace Quantaflare.API.Controllers
                 }
             }
         }
+
+        [HttpPost]
+        [Route("PostLocDetails")]
+        public async Task<IActionResult> PostLocDetails([FromBody] List<LocationDetails> locDetails)
+        {
+            if (locDetails == null || !locDetails.Any())
+            {
+                return BadRequest("Invalid or empty location data.");
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+            };
+
+            // Serialize for logging or other purposes if needed
+            var jsonData = JsonSerializer.Serialize(locDetails, options);
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (var transaction = await connection.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        // 1️⃣ Get streamId for "Location"
+                        string streamIdQuery = "SELECT streamId FROM streams WHERE streamname = @StreamName";
+                        var streamId = await connection.ExecuteScalarAsync<int>(streamIdQuery, new { StreamName = "Location" });
+
+                        if (streamId == 0)
+                            throw new Exception("StreamId not found for Location");
+
+                        // 2️⃣ Get streamkeyid for "Lat" and "Long"
+                        string streamKeyQuery = "SELECT streamkeyid, key FROM streamkeys WHERE streamid = @StreamId AND key IN ('Lat', 'Long')";
+                        var streamKeys = await connection.QueryAsync<(int StreamKeyId, string Key)>(streamKeyQuery, new { StreamId = streamId });
+
+                        var latKeyId = streamKeys.FirstOrDefault(k => k.Key == "Lat").StreamKeyId;
+                        var longKeyId = streamKeys.FirstOrDefault(k => k.Key == "Long").StreamKeyId;
+
+                        if (latKeyId == 0 || longKeyId == 0)
+                            throw new Exception("StreamKeyId not found for Lat/Long");
+
+                        // 3️⃣ Insert into streamkeyvalues for each location in the list
+                        string insertQuery = @"
+                    INSERT INTO streamkeyvalues (timestamp, streamid, streamkeyid, keyvalue) 
+                    VALUES (@Timestamp, @StreamId, @StreamKeyId, @KeyValue)";
+
+
+                        var timestamp = DateTime.UtcNow;
+
+                        foreach (var location in locDetails)
+                        {
+                            // Insert Latitude for each location
+                            await connection.ExecuteAsync(insertQuery, new
+                            {
+                                Timestamp = timestamp,
+                                StreamId = streamId,
+                                StreamKeyId = latKeyId,
+                                KeyValue = location.Latitude
+                            }, transaction);
+
+                            // Insert Longitude for each location
+                            await connection.ExecuteAsync(insertQuery, new
+                            {
+                                Timestamp = timestamp,
+                                StreamId = streamId,
+                                StreamKeyId = longKeyId,
+                                KeyValue = location.Longitude
+                            }, transaction);
+                        }
+
+                        // Commit the transaction
+                        await transaction.CommitAsync();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        // Rollback in case of error
+                        await transaction.RollbackAsync();
+                        Console.WriteLine($"Error: {ex.Message}");
+                        return StatusCode(500, $"Internal server error: {ex.Message}");
+                    }
+                }
+            }
+
+            return Ok("Location details successfully inserted.");
+        }
+
 
         [HttpGet]
         [Route("GetQFChart")]

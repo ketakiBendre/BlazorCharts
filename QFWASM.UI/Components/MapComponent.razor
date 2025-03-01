@@ -125,18 +125,16 @@
         {
 
             Random random = new Random();
-            var locations = new List<Location>();
-
             // Generate 5 random locations
             for (int i = 0; i < 5; i++)
             {
-                locations.Add(new Location
+                locationDetailsList.Add(new LocationDetails
                                     {
                                         Latitude = loc.Latitude + (random.NextDouble() * 0.1) - 0.05,  // Small variation
                                         Longitude = loc.Longitude + (random.NextDouble() * 0.1) - 0.05
                                     });
             }
-            var json = JsonSerializer.Serialize(locations);
+            var json = JsonSerializer.Serialize(locationDetailsList);
             await JSRuntime.InvokeVoidAsync("initializeMapboxWithRoute", JsonDocument.Parse(json).RootElement);
 
         }
@@ -156,6 +154,7 @@
                 loc.Latitude = location.Latitude;
                 loc.Longitude = location.Longitude;
                 isLocationValid = true;
+                locationDetailsList.Add(new LocationDetails {Latitude=loc.Latitude,Longitude=loc.Longitude });
                 StateHasChanged();
                 Console.WriteLine($"Calling initializeMapbox with: {location.Latitude}, {location.Longitude}, 12");
                 // Call the JavaScript function
@@ -197,28 +196,42 @@
         }
         else
         {
-            QFChart cData = new QFChart();
-            cData.chartTitle = ChartTitle;
-            cData.chartType = MudBlazor.ChartType.StackedBar;
-            cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Lat" });
-            cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Long" });
-            var response = await Http.PostAsJsonAsync("api/Stream/PostQFChart", cData);
+            //Save data in Streamkeyvalues table first
+            var response = await Http.PostAsJsonAsync("api/Stream/PostLocDetails", locationDetailsList);
             if (response.IsSuccessStatusCode)
             {
-                int chartId = await response.Content.ReadFromJsonAsync<int>(); // Read the returned chartId
-                if (chartId > -1) // Check if a valid chartId was returned
+                QFChart cData = new QFChart();
+                cData.chartTitle = ChartTitle;
+                cData.chartType = MudBlazor.ChartType.StackedBar;
+                cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Lat" });
+                cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Long" });
+                var responseQF = await Http.PostAsJsonAsync("api/Stream/PostQFChart", cData);
+                if (responseQF.IsSuccessStatusCode)
                 {
-                    cData.chartID = chartId;
-                    MudDialog.Close(DialogResult.Ok(cData));
-                    ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight);
+                    int chartId = await responseQF.Content.ReadFromJsonAsync<int>(); // Read the returned chartId
+                    if (chartId > -1) // Check if a valid chartId was returned
+                    {
+                        cData.chartID = chartId;
+                        MudDialog.Close(DialogResult.Ok(cData));
+                        ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight);
+                    }
                 }
+                else
+                {
+                    // Handle the error response (optional)
+                    var errorMessage = await responseQF.Content.ReadAsStringAsync();
+                    ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight);
+                }
+                
             }
             else
             {
                 // Handle the error response (optional)
                 var errorMessage = await response.Content.ReadAsStringAsync();
-                ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight);
+                ShowAlert($"Error saving streamkeyvalues data: {errorMessage}", Defaults.Classes.Position.BottomRight);
             }
+
+            
         }
     }
 
