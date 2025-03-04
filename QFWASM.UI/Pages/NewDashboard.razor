@@ -458,6 +458,8 @@
 
                             Console.WriteLine($" dashboard charts:{dashboard_chart.chartTitle}");
                             showChart = true;
+                            startTime = DateTimeOffset.Now.AddDays(-5).Date;
+                            endTime = DateTimeOffset.Now;
                             switch (dashboard_chart.chartType)
                             {
                                 case MudBlazor.ChartType.Line:
@@ -470,9 +472,6 @@
                                     break;
 
                                 case MudBlazor.ChartType.Timeseries:
-                                    startTime = DateTimeOffset.Now.AddDays(-5).Date;
-                                    endTime = DateTimeOffset.Now;
-
                                     var timeSeriesData = await myChartService.GetTimeChartInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
                                     timeSeriesData.chartTitle = dashboard_chart.chartTitle;
                                     timeSeriesData.chartId = dashboard_chart.chartID;
@@ -480,10 +479,15 @@
 
                                     allChartList.Add(timeSeriesData);
                                     break;
+                                case MudBlazor.ChartType.StackedBar:
+                                    var mapDataList = await myChartService.GetMapDataInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+                                    mapDataList.chartTitle = dashboard_chart.chartTitle;
+                                    mapDataList.chartId = dashboard_chart.chartID;
+                                    mapDataList.chartType = MudBlazor.ChartType.StackedBar;
+                                    allChartList.Add(mapDataList);
+                                    break;
 
                                 default:
-                                    startTime = DateTimeOffset.Now.AddDays(-5).Date;
-                                    endTime = DateTimeOffset.Now;
                                     var rawData = await myChartService.GetRawDataInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
                                     rawData.chartTitle = dashboard_chart.chartTitle;
                                     rawData.chartId = dashboard_chart.chartID;

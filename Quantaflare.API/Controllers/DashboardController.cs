@@ -66,7 +66,7 @@ namespace Quantaflare.API.Controllers
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
-                var dashboardName = connection.QuerySingleOrDefault<string>("SELECT dashname FROM dashboard WHERE clusterid = @clusterId AND dashname like \'New Dashboard%\' ORDER BY dashid DESC LIMIT 1", new { clusterId });
+                var dashboardName = connection.QuerySingleOrDefault<string>("SELECT dashname FROM dashboard WHERE clusterid = @clusterId AND dashname like \'New Dashboard%\' ORDER BY dashname DESC LIMIT 1", new { clusterId });
                 if (dashboardName == null)
                 {
                     return Ok(string.Empty); 
