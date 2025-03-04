@@ -20,7 +20,8 @@
             <MudText Typo="Typo.h5" Color="Color.Primary">Adding a Map for Battery Location</MudText>
         </MudItem>
         <MudItem xs="6" sm="12" md="12">
-            <MudTextField @bind-Value="ChartTitle" Label="Chart Title" Variant="Variant.Outlined"></MudTextField>
+            <MudTextField @bind-Value="ChartTitle" Label="Chart Title" Variant="Variant.Outlined" OnBlur="CheckIfTitleExists" Immediate="true"></MudTextField>
+            
         </MudItem>
         <MudItem xs="6" sm="12" md="12" Class="mb-4">
             <MudSwitch @bind-Value="searchLoc" Label="Search By Location" />
@@ -71,6 +72,7 @@
     public bool _selectedOption { get; set; } = true;
     private List<ChartDataStream> mapDataList = new List<ChartDataStream>();
     private bool isLocationValid = false;
+    private bool IsTitleDuplicate { get; set; } = false;
     private bool selectedOption
     {
         get => _selectedOption;
@@ -83,6 +85,33 @@
             }
         }
     }
+
+    private async Task CheckIfTitleExists()
+    {
+        if (string.IsNullOrWhiteSpace(ChartTitle))
+        {
+            IsTitleDuplicate = false;
+            return;
+        }
+
+        // Simulate API call to check if title exists
+        IsTitleDuplicate = await CheckTitleInDatabase(ChartTitle);
+    }
+
+    private async Task<bool> CheckTitleInDatabase(string title)
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<bool>($"api/GetChartName?title={Uri.EscapeDataString(title)}");
+            return response;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking chart title: {ex.Message}");
+            return false;
+        }
+    }
+
 
     private async Task OnOptionChanged(bool newValue)
     {

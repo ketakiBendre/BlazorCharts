@@ -66,8 +66,24 @@ namespace Quantaflare.API.Controllers
             }
         }
 
-       
-        [HttpPost]
+        [HttpGet]
+        [Route("GetChartName")]
+        public async Task<bool> GetChartName(string title)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+            var query = @"
+        SELECT COUNT(*)
+        FROM QFChart
+        WHERE chartTitle = @Title;";
+
+            var count = await connection.ExecuteScalarAsync<int>(query, new { Title = title });
+
+            return count > 0; // Returns true if the title exists
+        }
+
+
+            [HttpPost]
         [Route("getLineChartInfo")]
 
         public async Task<IActionResult> getLineChartInfo([FromBody] List<LineChartData> lineChartList)

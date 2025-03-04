@@ -10,6 +10,6 @@ namespace Quantaflare.Data
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public int ZoomLevel { get; set; } = 6;
+        public int ZoomLevel { get; set; } = 10;
     }
 }

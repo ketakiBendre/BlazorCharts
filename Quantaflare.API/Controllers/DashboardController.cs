@@ -61,19 +61,46 @@ namespace Quantaflare.API.Controllers
 
         [HttpGet]
         [Route("GetDashboardName")]
-        public IActionResult GetDashboardName(int clusterId)
+        public async Task<string> GetDashboardName(string newDashName, int clusterId)
         {
-            using (var connection = new NpgsqlConnection(_connectionString))
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            bool isNewDashboard = newDashName.StartsWith("New Dashboard", StringComparison.OrdinalIgnoreCase);
+
+            if (isNewDashboard)
             {
-                connection.Open();
-                var dashboardName = connection.QuerySingleOrDefault<string>("SELECT dashname FROM dashboard WHERE clusterid = @clusterId AND dashname like \'New Dashboard%\' ORDER BY dashname DESC LIMIT 1", new { clusterId });
-                if (dashboardName == null)
+                // Find the latest "New Dashboard %" for the given cluster
+                var maxExistingDashboardQuery = @"
+            SELECT dashname FROM dashboard 
+            WHERE clusterid = @clusterId AND dashname LIKE 'New Dashboard%' 
+            ORDER BY dashname DESC 
+            LIMIT 1";
+
+                var latestDashName = await connection.ExecuteScalarAsync<string>(maxExistingDashboardQuery, new { ClusterId = clusterId });
+
+                if (!string.IsNullOrEmpty(latestDashName) && latestDashName.StartsWith("New Dashboard "))
                 {
-                    return Ok(string.Empty); 
+                    var parts = latestDashName.Split(' ');
+                    if (parts.Length == 3 && int.TryParse(parts[2], out int number))
+                    {
+                        return $"New Dashboard {number + 1}";
+                    }
                 }
-                return Ok(dashboardName.Trim());
+
+                return "New Dashboard 1";  // Default first name if no existing dashboards
+            }
+            else
+            {
+                // Check if the custom name already exists within the same cluster
+                var existsQuery = @"SELECT COUNT(*) FROM dashboard WHERE clusterid = @clusterId AND dashname = @newDashName";
+                var count = await connection.ExecuteScalarAsync<int>(existsQuery, new { ClusterId = clusterId, NewDashName = newDashName });
+
+                return count > 0 ? "DUPLICATE_NAME" : newDashName;
             }
         }
+
+
 
         [HttpGet]
         [Route("GetDashboardDetails")]
@@ -126,12 +153,20 @@ namespace Quantaflare.API.Controllers
         [Route("PostDashboard")]
         public IActionResult PostDashboard(Dashboard ds)
         {
+            string jsonData;
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
 
                 // Serialize QFChartList to JSON
-                var jsonData = JsonSerializer.Serialize(ds.QFChartList);
+                if (ds.QFChartList != null && ds.QFChartList.Count > 0)
+                {
+                    jsonData = JsonSerializer.Serialize(ds.QFChartList);
+                }
+                else
+                {
+                   jsonData = "[]"; // Empty JSON array
+                }
 
                 // Define SQL query with parameterized JSON
                 var sql = @"

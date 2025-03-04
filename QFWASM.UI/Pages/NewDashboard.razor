@@ -19,12 +19,12 @@
         <MudItem md="12" sm="12" xs="12">
             <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-5
 
-" Elevation="2">
+            " Elevation="2">
                 <MudGrid>
-                     <MudItem xs="12" sm="12" md="12">
-                            <MudStack Row = "false">
-                                <MudText Typo="Typo.h5">New Unit Dashboard</MudText>
-                            </MudStack>
+                    <MudItem xs="12" sm="12" md="12">
+                        <MudStack Row = "false">
+                            <MudText Typo="Typo.h5">New Unit Dashboard</MudText>
+                        </MudStack>
 
                     </MudItem>
 
@@ -34,7 +34,7 @@
                             <MudRadioGroup @bind-Value="Dense_Radio">
                                 <MudRadio Value="true" Color="Color.Primary" Dense="true">Unit Dashboard</MudRadio>
                                 <MudRadio Value="false" Color="Color.Secondary" Dense="false">Cluster Dashboard</MudRadio>
-                        </MudRadioGroup>
+                            </MudRadioGroup>
                         </MudStack>
                     </MudItem>
                 </MudGrid>
@@ -43,33 +43,33 @@
                     <MudItem xs="6" sm="6" md="6" Class="mt-5 ">
                         <MudText Class="mb-5">Select a Widget to be added to dashboard </MudText>
                         <MudIconButton Target="_blank"
-                                       Variant="Variant.Outlined"
-                                       Icon="@Icons.Material.Filled.MultilineChart"
-                                       Color="Color.Primary" OnClick="LineChartPaper" Class="big-icon-button mr-5" />
+                        Variant="Variant.Outlined"
+                        Icon="@Icons.Material.Filled.MultilineChart"
+                        Color="Color.Primary" OnClick="LineChartPaper" Class="big-icon-button mr-5" />
 
                         <MudIconButton Target="_blank"
-                                   Variant="Variant.Outlined"
-                                   Icon="@Icons.Material.Filled.BarChart"
-                                       Color="Color.Primary" OnClick="BarChartPaper" Class="big-icon-button mr-5" Disabled="true" />
-                            
+                        Variant="Variant.Outlined"
+                        Icon="@Icons.Material.Filled.BarChart"
+                        Color="Color.Primary" OnClick="BarChartPaper" Class="big-icon-button mr-5" Disabled="true" />
+
                         <MudIconButton Target="_blank"
-                                       Variant="Variant.Outlined"
-                                   Icon="@Icons.Material.Filled.PieChart"
-                                       Color="Color.Primary" aria-label="PieChart" Class="big-icon-button mr-5" Disabled="true" />
+                        Variant="Variant.Outlined"
+                        Icon="@Icons.Material.Filled.PieChart"
+                        Color="Color.Primary" aria-label="PieChart" Class="big-icon-button mr-5" Disabled="true" />
                         <MudIconButton Target="_blank"
-                                       Variant="Variant.Outlined"
-                                       Icon="@Icons.Material.Filled.TableChart"
-                                       Color="Color.Primary" OnClick="TimeChartPaper" Class="big-icon-button mr-5" />
+                        Variant="Variant.Outlined"
+                        Icon="@Icons.Material.Filled.TableChart"
+                        Color="Color.Primary" OnClick="TimeChartPaper" Class="big-icon-button mr-5" />
                         <MudIconButton Target="_blank"
-                                       Variant="Variant.Outlined"
-                                       Icon="@Icons.Material.Filled.Dataset"
-                                       Color="Color.Primary" OnClick="RawDataPaper" Class="big-icon-button mr-5" />
+                        Variant="Variant.Outlined"
+                        Icon="@Icons.Material.Filled.Dataset"
+                        Color="Color.Primary" OnClick="RawDataPaper" Class="big-icon-button mr-5" />
                         <MudIconButton Target="_blank"
-                                       Variant="Variant.Outlined"
-                                       Icon="@Icons.Material.Filled.Map"
-                                       Color="Color.Primary" OnClick="MapPaper" Class="big-icon-button mr-5" />
+                        Variant="Variant.Outlined"
+                        Icon="@Icons.Material.Filled.Map"
+                        Color="Color.Primary" OnClick="MapPaper" Class="big-icon-button mr-5" />
                     </MudItem>
-                    
+
                 </MudGrid>
                 <MudGrid>
                     <MudContainer Style="text-align: right;">
@@ -80,14 +80,14 @@
             </MudPaper>
 
         </MudItem>
-       
+
         @if (showChart)
         {
             <MudGrid>
-            <MudItem xs="12">
+                <MudItem xs="12">
                     <MudGrid Id="sortable-grid">
-                    @for (int i=0;i<allChartList.Count;i++)
-                    {
+                        @for (int i=0;i<allChartList.Count;i++)
+                        {
                             int localindex = i;
                             var displayChart = allChartList[i];
                             var chartData = ds.QFChartList[i];
@@ -100,11 +100,11 @@
                                     @if (@displayChart.chartType == ChartType.Timeseries)
                                     {
                                         <MudTimeSeriesChart ChartType="@displayChart.chartType"
-                                                  ChartSeries="@displayChart.tSeries"
-                                                  @bind-SelectedIndex="@displayChart.Index"
-                                                  XAxisLabels="@displayChart.xAxisLabels"
-                                                  Width="100%"
-                                                  Height="350px"
+                                        ChartSeries="@displayChart.tSeries"
+                                        @bind-SelectedIndex="@displayChart.Index"
+                                        XAxisLabels="@displayChart.xAxisLabels"
+                                        Width="100%"
+                                        Height="350px"
                                         ChartOptions="@displayChart.options" CanHideSeries TimeLabelSpacing="TimeSpan.FromMinutes(5)" />
                                     }
                                     else if (@displayChart.chartType == ChartType.Donut)
@@ -134,22 +134,22 @@
                                         <div id="map" style="width: 100%; height: 500px;"></div>
                                     }
                                     else{
-                                    <MudChart ChartType="@displayChart.chartType"
-                                              ChartSeries="@displayChart.series"
-                                              @bind-SelectedIndex="@displayChart.Index"
-                                              XAxisLabels="@displayChart.xAxisLabels"
-                                                  Width="100%"
-                                                  Height="@CalculateHeight(chartBreak)"
-                                              ChartOptions="@displayChart.options" />
+                                        <MudChart ChartType="@displayChart.chartType"
+                                        ChartSeries="@displayChart.series"
+                                        @bind-SelectedIndex="@displayChart.Index"
+                                        XAxisLabels="@displayChart.xAxisLabels"
+                                        Width="100%"
+                                        Height="@CalculateHeight(chartBreak)"
+                                        ChartOptions="@displayChart.options" />
                                     }
                                     @if (@displayChart.chartType != ChartType.Donut && @displayChart.chartType != ChartType.StackedBar)
                                     {
                                         <MudGrid>
                                             <MudItem xs="6"> 
-                                                 <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
+                                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
                                             </MudItem>
                                             <MudItem xs="6">
-                                                 <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
+                                                <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
                                             </MudItem>
                                         </MudGrid>
                                     }
@@ -161,23 +161,23 @@
                                             </MudContainer>
                                         </MudItem>
                                     </MudGrid>
-                            </MudPaper>
-                        </MudItem>
-                    }
-                 </MudGrid>
-            </MudItem>
-          </MudGrid>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudItem>
+            </MudGrid>
         }
-        
+
     </MudGrid>
 </MudContainer>
 
 
 <style>
     .big-icon-button {
-        font-size: 48px; /* Adjust size as needed */
-        width: 80px; /* Custom width */
-        height: 80px; /* Custom height */
+    font-size: 48px; /* Adjust size as needed */
+    width: 80px; /* Custom width */
+    height: 80px; /* Custom height */
     }
 </style>
 
@@ -202,7 +202,7 @@
     public bool selectedOption { get; set; } = true;
     private bool previousSelectedOption;
     int _papers = 0;
-   // int papers { get { return _papers; } set { UpdatePapers(value,12); } }
+    // int papers { get { return _papers; } set { UpdatePapers(value,12); } }
     int papers
     {
         get { return _papers; }
@@ -385,13 +385,25 @@
     {
         try
         {
+            var url_dashname = $"api/Dashboard/GetDashboardName?clusterid={clusterid}&&newDashName={TextValue}";
+            var responseName = await Http.GetAsync(url_dashname);
+            if (responseName.IsSuccessStatusCode)
+            {
+                var dName = await responseName.Content.ReadAsStringAsync();
+                if (dName != TextValue)
+                {
+                    ShowAlert($"Dashboard name '{TextValue}' already exists. Please select another one'.", Defaults.Classes.Position.BottomRight, Severity.Warning);
+                    return null;
+                }
+            }
+
             var newDash = new Dashboard
                 {
                     clusterId = int.Parse(clusterid),
                     createdOn = DateTime.Now,
                     dashName = TextValue,
                     dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard",
-                    QFChartList = chartDetail != null ? new List<Dictionary<int, int>> { chartDetail } : null
+                    QFChartList = chartDetail != null ? new List<Dictionary<int, int>> { chartDetail } : []
                 };
 
             var response = await Http.PostAsJsonAsync("api/Dashboard/PostDashboard", newDash);
@@ -512,35 +524,11 @@
     {
         string newDashName ="New Dashboard";
         //Get Dashboard name for by default New Dashboard
-        var url_dashname = $"api/Dashboard/GetDashboardName?clusterid={clusterid}";
+        var url_dashname = $"api/Dashboard/GetDashboardName?clusterid={clusterid}&&newDashName={newDashName}";
         var response = await Http.GetAsync(url_dashname);
         if (response.IsSuccessStatusCode)
         {
-            var responseName = await response.Content.ReadAsStringAsync();
-            if (responseName.StartsWith("New Dashboard"))
-            {
-                var numberPart = responseName.Substring(newDashName.Length).Trim();
-
-                // If the number part is empty, start from 1
-                if (string.IsNullOrWhiteSpace(numberPart))
-                {
-                    // Start from "New Dashboard 1"
-                    newDashName = "New Dashboard 1";
-                }
-                else if (int.TryParse(numberPart, out int dashboardNumber))
-                {
-                    // If there is a number, increment it
-                    dashboardNumber++;
-
-                    // Create the new dashboard name with the incremented number
-                    newDashName = $"New Dashboard {dashboardNumber}";
-                }
-                else
-                {
-                    // If the number part isn't valid, handle it (optional)
-                    Console.WriteLine("The current dashboard name does not have a valid number.");
-                }
-            }
+            newDashName = await response.Content.ReadAsStringAsync();
         }
 
         return newDashName;
@@ -784,9 +772,9 @@
             lineSeriesData.chartId = ReturnedLineChart.chartID;
             lineSeriesData.chartType = MudBlazor.ChartType.Line;
             allChartList.Add(lineSeriesData);
-            
+
             _papers = allChartList.Count;
-            
+
             var chartDetail = new Dictionary<int, int>{
                                  { ReturnedLineChart.chartID, 3 }
                                 };
@@ -837,7 +825,21 @@
         ds ??= await CreateNewDashboard();
         if (ds == null) return;
 
-        if (TextValue != ds.dashName) ds.dashName = TextValue;
+        if (TextValue != ds.dashName)
+        {
+            var url_dashname = $"api/Dashboard/GetDashboardName?clusterid={clusterid}&&newDashName={TextValue}";
+            var response = await Http.GetAsync(url_dashname);
+            if (response.IsSuccessStatusCode)
+            {
+                var dName = await response.Content.ReadAsStringAsync();
+                if (dName != TextValue)
+                {
+                    ShowAlert($"Dashboard name '{TextValue}' already exists. Please select another one'.", Defaults.Classes.Position.BottomRight, Severity.Warning);
+                    return;
+                }
+                ds.dashName = TextValue;
+            }
+        }
         if (Dense_Radio != (ds.dashType == "Unit Dashboard")) ds.dashType = Dense_Radio ? "Unit Dashboard" : "Cluster Dashboard";
         if (updatebrk || reOrdered){
             var serializedChartList = JsonSerializer.Serialize(ds.QFChartList);
