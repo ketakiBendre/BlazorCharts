@@ -124,111 +124,28 @@ namespace QFWASM.UI.Services
             return chartSeriesData;
         }
 
-       /* public async Task<ChartSeriesData> GetMapDataInfo()
+        public async Task<ChartSeriesData> GetMapDataInfo(List<ChartDataStream> mapChartList, DateTimeOffset startTime, DateTimeOffset endTime)
         {
             var mapSeriesData = new ChartSeriesData();
-            NavigationManager navigationManager;
-            var queryParams = new
-            {
-                OrgId = 2,
-                clusterId = 3,
-                fromTimeStamp = 0,
-                toTimeStamp = 0,
-                StreamId = 9,
-                pageIndex = 0,
-                pageSize = 0,
-                format = "string"
-            };
+            var queryString = $"?startTime={startTime.UtcDateTime:O}&endTime={endTime.UtcDateTime:O}";
+            // 'O' formats DateTime to ISO 8601
 
-            var url = $"https://api.quantaflare.com/v1/Data/stream-get/5b2e2b5d-4293-429c-be80-16f25fd39549";
-
-            using var httpClient = new HttpClient();
-            var configUrl = _navigationManager.BaseUri + "config.json";
-            var config = await Http.GetFromJsonAsync<Dictionary<string, string>>(configUrl);
-
-
-            var apiKey = config["ApiKey"];
-
-            httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
-
-            var jsonBody = JsonSerializer.Serialize(queryParams);
-            var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync(url, content);
+            // Make the POST request with the query string
+            var response = await Http.PostAsJsonAsync($"api/Stream/getMapInfo{queryString}", mapChartList);
 
             if (response.IsSuccessStatusCode)
             {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-                using (JsonDocument doc = JsonDocument.Parse(responseContent))
-                {
-                    var rootElement = doc.RootElement;
-
-                    // Check if 'data' exists in the root element
-                    if (rootElement.TryGetProperty("data", out var dataElement))
-                    {
-                        // Deserialize the "data" field into the UnitDataQueryResult object
-                        var apiResponse = JsonSerializer.Deserialize<UnitDataQueryResult>(dataElement.ToString(), options);
-
-
-
-                        foreach (var dataPoint in apiResponse.DataPoints)
-                        {
-                            // Initialize latitude and longitude to null initially
-                            double? latitude = null;
-                            double? longitude = null;
-
-                            // Find the StreamKey for Lat and Long dynamically by checking StreamKeyId
-                            var latStreamKey = apiResponse.StreamKeys.FirstOrDefault(s => s.Key == "Lat");
-                            var longStreamKey = apiResponse.StreamKeys.FirstOrDefault(s => s.Key == "Long");
-
-                            // Iterate over StreamKeyValues for each data point to find the respective values
-                            foreach (var streamKeyValue in dataPoint.StreamKeyValues)
-                            {
-                                // If the StreamKeyId matches the one for Latitude, assign the value
-                                if (latStreamKey != null && streamKeyValue.Key == latStreamKey.StreamKeyId.ToString())
-                                {
-                                    latitude = Convert.ToDouble(streamKeyValue.Value);
-
-                                }
-                                // If the StreamKeyId matches the one for Longitude, assign the value
-                                if (longStreamKey != null && streamKeyValue.Key == longStreamKey.StreamKeyId.ToString())
-                                {
-                                    longitude = Convert.ToDouble(streamKeyValue.Value);
-
-                                }
-                            }
-
-                            // If both latitude and longitude are available, add a LocationDetails object to the list
-                            if (latitude.HasValue && longitude.HasValue)
-                            {
-                                mapSeriesData.locationDetailsList.Add(new LocationDetails
-                                {
-                                    Latitude = latitude.Value,
-                                    Longitude = longitude.Value
-                                });
-                            }
-                        }
-                        return mapSeriesData;
-                    }
-                    else
-                    {
-                        Console.WriteLine("'data' field not found in the JSON response.");
-                    }
-                }
+                var locationDetailsList = await response.Content.ReadFromJsonAsync<List<LocationDetails>>();
+                mapSeriesData.locationDetailsList = locationDetailsList;
+                return mapSeriesData;
 
             }
             else
             {
                 Console.WriteLine($"Error: {response.StatusCode}");
+                return new ChartSeriesData(); // Return empty list on failure
             }
-
-
-            return mapSeriesData;
-        }*/
+        }
         public async Task<ChartSeriesData> GetRawDataInfo(List<ChartDataStream> timeChartList, DateTimeOffset startTime, DateTimeOffset endTime)
         {
             chartSeriesData = new ChartSeriesData();

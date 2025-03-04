@@ -178,7 +178,78 @@ namespace Quantaflare.API.Controllers
             }
         }
 
-       
+        [HttpPost]
+        [Route("getMapInfo")]
+        public async Task<IActionResult> getMapInfo([FromBody] List<ChartDataStream> timeChartList,
+                                                    [FromQuery] DateTimeOffset startTime,
+                                                    [FromQuery] DateTimeOffset endTime)
+        {
+            try
+            {
+                if (timeChartList == null || !timeChartList.Any())
+                {
+                    Console.WriteLine("Error: No stream names provided.");
+                    return BadRequest("Stream list cannot be empty.");
+                }
+
+                var data = await getMapInfoFunc(timeChartList, startTime, endTime);
+
+                if (!data.Any())
+                {
+                    Console.WriteLine("No location data found.");
+                }
+
+                Console.WriteLine($"Returning {data.Count()} records.");
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in getMapInfo: {ex.Message}");
+                return StatusCode(500, $"Internal Server Error: {ex.Message}");
+            }
+        }
+
+        private async Task<List<LocationDetails>> getMapInfoFunc(
+            List<ChartDataStream> mapDataList,
+            DateTimeOffset startTime,
+            DateTimeOffset endTime)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var streamNames = mapDataList.Select(m => m.stream).Distinct().ToArray();
+
+            var query = @"
+SELECT latitude, longitude
+FROM get_map_info(@StreamNames, @StartTime, @EndTime);";
+
+            var parameters = new
+            {
+                StreamNames = streamNames,
+                StartTime = startTime.UtcDateTime,
+                EndTime = endTime.UtcDateTime
+            };
+
+            try
+            {
+                Console.WriteLine($"Executing Query with StartTime: {parameters.StartTime}, EndTime: {parameters.EndTime}");
+                var result = await connection.QueryAsync<LocationDetails>(query, parameters);
+
+                Console.WriteLine($"Fetched {result.Count()} records from DB");
+                foreach (var loc in result)
+                {
+                    Console.WriteLine($"Lat: {loc.Latitude}, Long: {loc.Longitude}");
+                }
+
+                return result.ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Database Query Error: {ex.Message}");
+                return new List<LocationDetails>(); // Return empty list instead of null to avoid NullReferenceException
+            }
+        }
+
 
         [HttpPost]
         [Route("PostQFChart")]

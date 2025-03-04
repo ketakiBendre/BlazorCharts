@@ -151,7 +151,7 @@ namespace Quantaflare.API.Controllers
                 try
                 {
                     // Execute query and get the inserted dashboard ID
-                    var dashboardId = connection.ExecuteScalar<int>(sql, parameters);
+                    var dashboardId = connection.ExecuteScalar<Guid>(sql, parameters);
                     return Ok(dashboardId);
                 }
                 catch (Exception ex)

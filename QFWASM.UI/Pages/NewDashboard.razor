@@ -123,6 +123,16 @@
                                             </Columns>
                                         </MudDataGrid>
                                     }
+                                    else if (@displayChart.chartType == ChartType.StackedBar)
+                                    {
+                                        <MudItem xs="6" sm="12" md="12" Class="mb-4">
+                                            <MudRadioGroup @bind-Value="selectedOption" Label="Choose Option" Color="Primary">
+                                                <MudRadio Value="true" Color="Color.Primary" Dense="true">Current Location</MudRadio>
+                                                <MudRadio Value="false" Color="Color.Secondary" Dense="false">Full Route</MudRadio>
+                                            </MudRadioGroup>
+                                        </MudItem>
+                                        <div id="map" style="width: 100%; height: 500px;"></div>
+                                    }
                                     else{
                                     <MudChart ChartType="@displayChart.chartType"
                                               ChartSeries="@displayChart.series"
@@ -132,7 +142,7 @@
                                                   Height="@CalculateHeight(chartBreak)"
                                               ChartOptions="@displayChart.options" />
                                     }
-                                    @if (@displayChart.chartType != ChartType.Donut)
+                                    @if (@displayChart.chartType != ChartType.Donut && @displayChart.chartType != ChartType.StackedBar)
                                     {
                                         <MudGrid>
                                             <MudItem xs="6"> 
@@ -189,7 +199,8 @@
     private QFChart ReturnedLineChart = new QFChart();
     private Dashboard ds;
     private List<ChartSeriesData> allChartList = new List<ChartSeriesData>();
-
+    public bool selectedOption { get; set; } = true;
+    private bool previousSelectedOption;
     int _papers = 0;
    // int papers { get { return _papers; } set { UpdatePapers(value,12); } }
     int papers
@@ -235,6 +246,22 @@
         if (firstRender || allChartList.Count > 0)
         {
             await JSRuntime.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
+            foreach (var chart in allChartList)
+            {
+                if (chart.chartType == ChartType.StackedBar && chart.locationDetailsList.Any())
+                {
+
+                    if (selectedOption)
+                    {
+                        await ShowMap(chart.locationDetailsList.Last());  // For current location
+                    }
+                    else
+                    {
+                        await ShowMapRoute(chart.locationDetailsList.Last());  // For whole route
+                    }
+
+                }
+            }
         }
     }
 
@@ -518,28 +545,30 @@
     private async Task MapPaper()
     {
         QFChart ReturnedDataChart = new QFChart();
+        DateTimeOffset startTime, endTime;
         var parameters = new DialogParameters()
         {
             { "Title", "Show Map" },
             {"ClusterId", clusterid}
         };
         var dialog = DialogService.Show<Components.MapComponent>("Custom Options Dialog", parameters, _maxWidth);
-
         var result = await dialog.Result;
         if (result.Data != null && !result.Canceled)
         {
 
             ReturnedDataChart = (QFChart)result.Data;
-           /* var mapDataList = await myChartService.GetMapDataInfo();
+            startTime = DateTimeOffset.Now.AddDays(-5).Date;
+            endTime = DateTimeOffset.Now;
+            var mapDataList = await myChartService.GetMapDataInfo(ReturnedDataChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
             mapDataList.chartTitle = ReturnedDataChart.chartTitle;
             mapDataList.chartId = ReturnedDataChart.chartID;
             mapDataList.chartType = MudBlazor.ChartType.StackedBar;
-            allChartList.Add(mapDataList);*/
+            allChartList.Add(mapDataList);
 
             _papers = allChartList.Count;
 
             var chartDetail = new Dictionary<int, int>{
-                                 { ReturnedDataChart.chartID, 3}
+                                 { ReturnedDataChart.chartID, 4}
                                 };
             if (chartDetail != null)
             {
@@ -565,6 +594,63 @@
                 showChart = true;
                 StateHasChanged();
             }
+        }
+    }
+
+    private async Task ShowMap(LocationDetails location)
+    {
+        if (location.Latitude != 0 &&
+            location.Longitude != 0 &&
+            location.ZoomLevel != 0)
+        {
+            await JSRuntime.InvokeVoidAsync("initializeMapbox", location.Latitude, location.Longitude, location.ZoomLevel);
+        }
+        else
+        {
+            Console.WriteLine($"Invalid input: {location.Latitude}, {location.Longitude}, {location.ZoomLevel}");
+        }
+    }
+
+    private async Task ShowMapRoute(LocationDetails loc)
+    {
+
+
+        if (loc != null)
+        {
+            List<LocationDetails> locationDetailsList = new List<LocationDetails>();
+            Random random = new Random();
+            // Generate 5 random locations
+            for (int i = 0; i < 5; i++)
+            {
+                locationDetailsList.Add(new LocationDetails
+                    {
+                        Latitude = loc.Latitude + (random.NextDouble() * 0.1) - 0.05,  // Small variation
+                        Longitude = loc.Longitude + (random.NextDouble() * 0.1) - 0.05
+                    });
+            }
+            var json = JsonSerializer.Serialize(locationDetailsList);
+            await JSRuntime.InvokeVoidAsync("initializeMapboxWithRoute", JsonDocument.Parse(json).RootElement);
+
+        }
+        else
+        {
+            Console.WriteLine("No locations to plot.");
+        }
+    }
+
+    private async Task ShowMap(List<LocationDetails> locations)
+    {
+
+
+        if (locations.Any())
+        {
+            var json = JsonSerializer.Serialize(locations);
+            await JSRuntime.InvokeVoidAsync("initializeMapboxWithRoute", JsonDocument.Parse(json).RootElement);
+
+        }
+        else
+        {
+            Console.WriteLine("No locations to plot.");
         }
     }
 
