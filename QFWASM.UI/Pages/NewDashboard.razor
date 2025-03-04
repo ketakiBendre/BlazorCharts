@@ -109,19 +109,17 @@
                                     }
                                     else if (@displayChart.chartType == ChartType.Donut)
                                     {
-                                        <MudDataGrid Items="@displayChart.rawDataList" Bordered="true" Hover="true" Striped="true" Dense="true">
-                                            <Columns>
-                                                <!-- Static Timestamp Column -->
-                                                <PropertyColumn Property="x => x.Timestamp" Title="Time" />
-
-                                                <!-- Dynamic Columns -->
-                                                @foreach (var column in dynamicColumns)
-                                                {
-
-                                                    <PropertyColumn Property="x => x.Fields[column]" Title="@column" />
-                                                }
-                                            </Columns>
-                                        </MudDataGrid>
+                                        <MudStack Spacing="1">
+                                            <MudDataGrid Items="@displayChart.rawDataList" Hover="true" Bordered="true" Striped="true" Dense="true" SortMode="SortMode.Single" Virtualize="true" FixedHeader="true" Style="max-width: 100%;">
+                                                <Columns>
+                                                    <PropertyColumn Property="x => x.Timestamp" Title="Time" />
+                                                    @foreach (var column in dynamicColumns)
+                                                    {
+                                                        <PropertyColumn Property="x => x.Fields[column]" Title="@column" Sortable="false" />
+                                                    }
+                                                </Columns>
+                                            </MudDataGrid>
+                                        </MudStack>
                                     }
                                     else if (@displayChart.chartType == ChartType.StackedBar)
                                     {
@@ -672,7 +670,7 @@
             _papers = allChartList.Count;
 
             var chartDetail = new Dictionary<int, int>{
-                                 { ReturnedDataChart.chartID, 3}
+                                 { ReturnedDataChart.chartID, 4}
                                 };
             if (chartDetail != null)
             {
