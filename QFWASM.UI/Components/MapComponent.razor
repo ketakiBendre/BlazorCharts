@@ -21,7 +21,7 @@
         </MudItem>
         <MudItem xs="6" sm="12" md="12">
             <MudTextField @bind-Value="ChartTitle" Label="Chart Title" Variant="Variant.Outlined" OnBlur="CheckIfTitleExists" Immediate="true"></MudTextField>
-            
+
         </MudItem>
         <MudItem xs="6" sm="12" md="12" Class="mb-4">
             <MudSwitch @bind-Value="searchLoc" Label="Search By Location" />
@@ -44,7 +44,8 @@
                 <MudRadio Value="false" Color="Color.Secondary" Dense="false">Full Route</MudRadio>
             </MudRadioGroup>
         </MudItem>
-        <div id="map" style="width: 100%; height: 500px;" @after="OnMapContainerRendered"></div>
+            <div id="map" style="width: 100%; height: 500px;" @after="OnMapContainerRendered"></div>
+        
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="Close">Close</MudButton>
@@ -63,8 +64,8 @@
     public string ChartTitle { get; set; } = string.Empty;
     private string SearchQuery { get; set; }
 
-    private string Latitude { get; set; }
-    private string Longitude { get; set; }
+    private string Latitude { get; set; } 
+    private string Longitude { get; set; } 
     private string ZoomLevel { get; set; } = "12"; // Default zoom level
     private bool searchLoc { get; set; } = false;
     private List<LocationDetails> locationDetailsList = new List<LocationDetails>();
@@ -138,7 +139,16 @@
             loc.Longitude = lng;
             isLocationValid = true;
             StateHasChanged();
-            await JSRuntime.InvokeVoidAsync("initializeMapbox", lat, lng, zoom);
+            
+            if (_selectedOption) // If Current Location is selected
+            {
+                locationDetailsList.Add(new LocationDetails { Latitude = lat, Longitude = lng });
+                await JSRuntime.InvokeVoidAsync("initializeMapbox", lat, lng, zoom);
+            }
+            else // If Full Route is selected, call ShowMapRoute instead
+            {
+                await ShowMapRoute();
+            }
         }
         else
         {
@@ -148,8 +158,7 @@
 
     private async Task ShowMapRoute()
     {
-
-
+        locationDetailsList.Clear();
         if ( loc != null)
         {
 
@@ -180,32 +189,25 @@
             var location = await GetCoordinatesFromMapbox(SearchQuery);
             if (location != null)
             {
-                loc.Latitude = location.Latitude;
-                loc.Longitude = location.Longitude;
-                isLocationValid = true;
-                locationDetailsList.Add(new LocationDetails {Latitude=loc.Latitude,Longitude=loc.Longitude });
-                StateHasChanged();
-                Console.WriteLine($"Calling initializeMapbox with: {location.Latitude}, {location.Longitude}, 12");
-                // Call the JavaScript function
-                await JSRuntime.InvokeVoidAsync("initializeMapbox", location.Latitude, location.Longitude, 12);
+                Latitude = location.Latitude.ToString();
+                Longitude = location.Longitude.ToString();
+                ShowMap();
             }
         }
     }
 
-    private async Task<Location> GetCoordinatesFromMapbox(string query)
+    private async Task<LocationDetails> GetCoordinatesFromMapbox(string query)
     {
         var accessToken = "pk.eyJ1IjoicWZzZXJ2aWNlIiwiYSI6ImNtNXZlZXFuajAxMW4yanE2NXlkYzVjYjQifQ.yt3RAlNbu7pOWYH2imLdJA";
         var url = $"https://api.mapbox.com/geocoding/v5/mapbox.places/{Uri.EscapeDataString(query)}.json?access_token={accessToken}&autocomplete=true&limit=5";
 
-
-        using var httpClient = new HttpClient();
-        var response = await httpClient.GetStringAsync(url);
+        var response = await Http.GetStringAsync(url);
         var json = JsonSerializer.Deserialize<MapboxGeocodingResponse>(response);
 
         var feature = json?.Features?.FirstOrDefault();
         if (feature != null)
         {
-            return new Location
+            return new LocationDetails
                 {
                     Latitude = feature.Geometry.Coordinates[1],
                     Longitude = feature.Geometry.Coordinates[0]
@@ -221,7 +223,7 @@
     {
         if (string.IsNullOrEmpty(ChartTitle))
         {
-            ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight);
+            myChartService.ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight, Severity.Error);
         }
         else
         {
@@ -242,14 +244,14 @@
                     {
                         cData.chartID = chartId;
                         MudDialog.Close(DialogResult.Ok(cData));
-                        ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight);
+                        myChartService.ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight, Severity.Success);
                     }
                 }
                 else
                 {
                     // Handle the error response (optional)
                     var errorMessage = await responseQF.Content.ReadAsStringAsync();
-                    ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight);
+                    myChartService.ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight, Severity.Error);
                 }
                 
             }
@@ -257,7 +259,7 @@
             {
                 // Handle the error response (optional)
                 var errorMessage = await response.Content.ReadAsStringAsync();
-                ShowAlert($"Error saving streamkeyvalues data: {errorMessage}", Defaults.Classes.Position.BottomRight);
+                myChartService.ShowAlert($"Error saving streamkeyvalues data: {errorMessage}", Defaults.Classes.Position.BottomRight, Severity.Error);
             }
 
             
@@ -265,14 +267,7 @@
     }
 
 
-    void ShowAlert(string message, string position)
-    {
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = position;
-        Snackbar.Add(message, Severity.Error, c => c.SnackbarVariant = Variant.Outlined);
-    }
-
-    public class Location { public double Latitude { get; set; } public double Longitude { get; set; } }
+    
     public class MapboxGeocodingResponse
     {
         [JsonPropertyName("features")]

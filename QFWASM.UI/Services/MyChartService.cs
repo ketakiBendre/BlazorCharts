@@ -8,6 +8,8 @@ using System.Linq;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Text;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
+
 
 namespace QFWASM.UI.Services
 {
@@ -20,11 +22,14 @@ namespace QFWASM.UI.Services
         private List<TimeSeriesChartSeries> tSeries = new List<TimeSeriesChartSeries>();
         private ChartSeriesData chartSeriesData = new ChartSeriesData();
         private readonly NavigationManager _navigationManager;
-        public MyChartService(HttpClient httpClient, NavigationManager navigationManager)
+        private readonly ISnackbar Snackbar;
+        public MyChartService(HttpClient httpClient, NavigationManager navigationManager, ISnackbar snackbar)
         {
             Http = httpClient;
             _navigationManager = navigationManager;
+            Snackbar = snackbar;
         }
+
         public async Task<ChartSeriesData> GetLineChartInfo(List<LineChartData> lineChartList)
         {
             chartSeriesData = new ChartSeriesData();
@@ -186,6 +191,13 @@ namespace QFWASM.UI.Services
                 }
             }
             return rawDataList;
+        }
+
+        public void ShowAlert(string message, string position, Severity sev)
+        {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = position;
+            Snackbar.Add(message, sev, c => c.SnackbarVariant = Variant.Outlined);
         }
     }
 }
