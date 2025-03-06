@@ -389,7 +389,7 @@
                 }
                 catch (Exception ex)
                 {
-                    ShowAlert("No Data to display check other Dashboard !!", Defaults.Classes.Position.BottomRight, Severity.Error);
+                    myChartService.ShowAlert("No Data to display check other Dashboard !!", Defaults.Classes.Position.BottomRight, Severity.Error);
                 }
             }
         }
@@ -428,13 +428,6 @@
         return csvBuilder.ToString();
     }
 
-    
-    void ShowAlert(string message, string position, Severity sev)
-    {
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = position;
-        Snackbar.Add(message, sev, c => c.SnackbarVariant = Variant.Outlined);
-    }
 
 
 }

@@ -306,7 +306,7 @@
         }
         else
         {
-            ShowAlert("Please Select Different variation than existing in Grid !!", Defaults.Classes.Position.BottomRight);
+            myChartService.ShowAlert("Please Select Different variation than existing in Grid !!", Defaults.Classes.Position.BottomRight, Severity.Error);
         }
     }
 
@@ -324,7 +324,7 @@
     {
         if (string.IsNullOrEmpty(ChartTitle))
         {
-            ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight);
+            myChartService.ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight, Severity.Error);
         }
         else if (timeChartList.Any())
         {
@@ -344,29 +344,21 @@
                 {
                     cData.chartID = chartId;
                     MudDialog.Close(DialogResult.Ok(cData));
-                    ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight);
+                    myChartService.ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight,Severity.Success);
                 }
             }
             else
             {
                 // Handle the error response (optional)
                 var errorMessage = await response.Content.ReadAsStringAsync();
-                ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight);
+                myChartService.ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight,Severity.Error);
             }
         }
         else
         {
-            ShowAlert("Please Select Streams, Fields for TimeSeries chart !!", Defaults.Classes.Position.BottomRight);
+            myChartService.ShowAlert("Please Select Streams, Fields for TimeSeries chart !!", Defaults.Classes.Position.BottomRight,Severity.Error);
         }
     }
-
-    void ShowAlert(string message, string position)
-    {
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = position;
-        Snackbar.Add(message, Severity.Error, c => c.SnackbarVariant = Variant.Outlined);
-    }
-
 
     public class ChartOptions
     {

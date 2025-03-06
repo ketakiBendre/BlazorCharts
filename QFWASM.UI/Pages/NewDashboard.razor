@@ -393,7 +393,7 @@
                 var dName = await responseName.Content.ReadAsStringAsync();
                 if (dName != TextValue)
                 {
-                    ShowAlert($"Dashboard name '{TextValue}' already exists. Please select another one'.", Defaults.Classes.Position.BottomRight, Severity.Warning);
+                    myChartService.ShowAlert($"Dashboard name '{TextValue}' already exists. Please select another one'.", Defaults.Classes.Position.BottomRight, Severity.Warning);
                     return null;
                 }
             }
@@ -420,12 +420,12 @@
         catch (HttpRequestException ex)
         {
             Console.WriteLine($"HTTP request error: {ex.Message}");
-            ShowAlert("Failed to create a new dashboard. Please check your network connection and try again.", Defaults.Classes.Position.BottomRight, Severity.Error);
+            myChartService.ShowAlert("Failed to create a new dashboard. Please check your network connection and try again.", Defaults.Classes.Position.BottomRight, Severity.Error);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Unexpected error: {ex.Message}");
-            ShowAlert("An unexpected error occurred while creating a new dashboard.", Defaults.Classes.Position.BottomRight, Severity.Error);
+            myChartService.ShowAlert("An unexpected error occurred while creating a new dashboard.", Defaults.Classes.Position.BottomRight, Severity.Error);
         }
 
         return null;
@@ -514,7 +514,7 @@
                 }
                 catch (Exception ex)
                 {
-                    ShowAlert("No Data to display check other Dashboard !!", Defaults.Classes.Position.BottomRight, Severity.Error);
+                    myChartService.ShowAlert("No Data to display check other Dashboard !!", Defaults.Classes.Position.BottomRight, Severity.Error);
                 }
             }
         }
@@ -805,7 +805,7 @@
     {
         if (string.IsNullOrEmpty(TextValue))
         {
-            ShowAlert("Please enter a Dashboard name before saving!", Defaults.Classes.Position.BottomRight, Severity.Error);
+            myChartService.ShowAlert("Please enter a Dashboard name before saving!", Defaults.Classes.Position.BottomRight, Severity.Error);
             return;
         }
 
@@ -821,7 +821,7 @@
                 var dName = await response.Content.ReadAsStringAsync();
                 if (dName != TextValue)
                 {
-                    ShowAlert($"Dashboard name '{TextValue}' already exists. Please select another one'.", Defaults.Classes.Position.BottomRight, Severity.Warning);
+                    myChartService.ShowAlert($"Dashboard name '{TextValue}' already exists. Please select another one'.", Defaults.Classes.Position.BottomRight, Severity.Warning);
                     return;
                 }
                 ds.dashName = TextValue;
@@ -842,16 +842,5 @@
         await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
         Navigation.NavigateTo("/managedash");
     }
-
-    
-    
-
-    void ShowAlert(string message, string position,Severity sev)
-    {
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = position;
-        Snackbar.Add(message, sev, c => c.SnackbarVariant = Variant.Outlined);
-    }
-    
   
 }
