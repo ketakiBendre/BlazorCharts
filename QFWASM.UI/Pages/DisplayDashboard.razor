@@ -105,7 +105,7 @@
                     {
                         foreach (var dashboard_chart in dashboard_qfChartList)
                         {
-                            if (dashboard_chart.chartType == MudBlazor.ChartType.Line)
+                            if (dashboard_chart.chartType == QChartType.Line)
                             {
                                 showLineChart = true;
                                 var lineSeriesData = await myChartService.GetLineChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());

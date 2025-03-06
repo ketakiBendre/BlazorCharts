@@ -233,7 +233,7 @@
             {
                 QFChart cData = new QFChart();
                 cData.chartTitle = ChartTitle;
-                cData.chartType = MudBlazor.ChartType.StackedBar;
+                cData.chartType = QChartType.Map;
                 cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Lat" });
                 cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Long" });
                 var responseQF = await Http.PostAsJsonAsync("api/Stream/PostQFChart", cData);

@@ -98,9 +98,9 @@
                             <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId">
                                 <MudPaper Class="p-2" Style="width: 100%;">
                                     <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
-                                    @if (@displayChart.chartType == ChartType.Timeseries)
+                                    @if (@displayChart.chartType == QChartType.TimeSeries)
                                     {
-                                        <MudTimeSeriesChart ChartType="@displayChart.chartType"
+                                        <MudTimeSeriesChart ChartType="@displayChart.MudChartType"
                                         ChartSeries="@displayChart.tSeries"
                                         @bind-SelectedIndex="@displayChart.Index"
                                         XAxisLabels="@displayChart.xAxisLabels"
@@ -108,7 +108,7 @@
                                         Height="350px"
                                         ChartOptions="@displayChart.options" CanHideSeries TimeLabelSpacing="TimeSpan.FromMinutes(5)" />
                                     }
-                                    else if (@displayChart.chartType == ChartType.Donut)
+                                    else if (@displayChart.chartType == QChartType.RawData)
                                     {
                                         <MudStack Spacing="1">
                                             <MudDataGrid Items="@displayChart.rawDataList" Hover="true" Bordered="true" Striped="true" Dense="true" SortMode="SortMode.Single" Virtualize="true" FixedHeader="true" Style="max-width: 100%;">
@@ -122,7 +122,7 @@
                                             </MudDataGrid>
                                         </MudStack>
                                     }
-                                    else if (@displayChart.chartType == ChartType.StackedBar)
+                                    else if (@displayChart.chartType == QChartType.Map)
                                     {
                                         <MudItem xs="6" sm="12" md="12" Class="mb-4">
                                             <MudRadioGroup @bind-Value="selectedOption" Label="Choose Option" Color="Primary">
@@ -133,7 +133,7 @@
                                         <div id="map" style="width: 100%; height: 500px;"></div>
                                     }
                                     else{
-                                        <MudChart ChartType="@displayChart.chartType"
+                                        <MudChart ChartType="@displayChart.MudChartType"
                                         ChartSeries="@displayChart.series"
                                         @bind-SelectedIndex="@displayChart.Index"
                                         XAxisLabels="@displayChart.xAxisLabels"
@@ -141,7 +141,7 @@
                                         Height="@CalculateHeight(chartBreak)"
                                         ChartOptions="@displayChart.options" />
                                     }
-                                    @if (@displayChart.chartType != ChartType.Donut && @displayChart.chartType != ChartType.StackedBar)
+                                    @if (@displayChart.chartType != QChartType.RawData && @displayChart.chartType != QChartType.Map)
                                     {
                                         <MudGrid>
                                             <MudItem xs="6"> 
@@ -248,7 +248,7 @@
             await JSRuntime.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
             foreach (var chart in allChartList)
             {
-                if (chart.chartType == ChartType.StackedBar && chart.locationDetailsList.Any())
+                if (chart.chartType == QChartType.Map && chart.locationDetailsList.Any())
                 {
 
                         if (selectedOption)
@@ -475,7 +475,7 @@
                             endTime = DateTimeOffset.Now;
                             switch (dashboard_chart.chartType)
                             {
-                                case MudBlazor.ChartType.Line:
+                                case QChartType.Line:
                                     var lineSeriesData = await myChartService.GetLineChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
                                     lineSeriesData.chartTitle = dashboard_chart.chartTitle;
                                     lineSeriesData.chartId = dashboard_chart.chartID;
@@ -484,19 +484,19 @@
                                     allChartList.Add(lineSeriesData);
                                     break;
 
-                                case MudBlazor.ChartType.Timeseries:
+                                case QChartType.TimeSeries:
                                     var timeSeriesData = await myChartService.GetTimeChartInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
                                     timeSeriesData.chartTitle = dashboard_chart.chartTitle;
                                     timeSeriesData.chartId = dashboard_chart.chartID;
-                                    timeSeriesData.chartType = MudBlazor.ChartType.Timeseries;
+                                    timeSeriesData.chartType = QChartType.TimeSeries;
 
                                     allChartList.Add(timeSeriesData);
                                     break;
-                                case MudBlazor.ChartType.StackedBar:
+                                case QChartType.Map:
                                     var mapDataList = await myChartService.GetMapDataInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
                                     mapDataList.chartTitle = dashboard_chart.chartTitle;
                                     mapDataList.chartId = dashboard_chart.chartID;
-                                    mapDataList.chartType = MudBlazor.ChartType.StackedBar;
+                                    mapDataList.chartType=QChartType.Map;
                                     allChartList.Add(mapDataList);
                                     break;
 
@@ -504,6 +504,7 @@
                                     var rawData = await myChartService.GetRawDataInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
                                     rawData.chartTitle = dashboard_chart.chartTitle;
                                     rawData.chartId = dashboard_chart.chartID;
+                                    rawData.chartType = QChartType.RawData;
                                     dynamicColumns = rawData.rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
                                     allChartList.Add(rawData);
                                     break;
@@ -555,7 +556,7 @@
             var mapDataList = await myChartService.GetMapDataInfo(ReturnedDataChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
             mapDataList.chartTitle = ReturnedDataChart.chartTitle;
             mapDataList.chartId = ReturnedDataChart.chartID;
-            mapDataList.chartType = MudBlazor.ChartType.StackedBar;
+            mapDataList.chartType = QChartType.Map;
             allChartList.Add(mapDataList);
 
             _papers = allChartList.Count;
@@ -706,7 +707,7 @@
             var timeSeriesData = await myChartService.GetTimeChartInfo(ReturnedTimeChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
             timeSeriesData.chartTitle = ReturnedTimeChart.chartTitle;
             timeSeriesData.chartId = ReturnedTimeChart.chartID;
-            timeSeriesData.chartType = MudBlazor.ChartType.Timeseries;
+            timeSeriesData.chartType = QChartType.TimeSeries;
             allChartList.Add(timeSeriesData);
 
             _papers = allChartList.Count;
@@ -757,7 +758,7 @@
             var lineSeriesData = await myChartService.GetLineChartInfo(ReturnedLineChart.chartDataStreamList.Cast<LineChartData>().ToList());
             lineSeriesData.chartTitle = ReturnedLineChart.chartTitle;
             lineSeriesData.chartId = ReturnedLineChart.chartID;
-            lineSeriesData.chartType = MudBlazor.ChartType.Line;
+            lineSeriesData.chartType =QChartType.Line;
             allChartList.Add(lineSeriesData);
 
             _papers = allChartList.Count;

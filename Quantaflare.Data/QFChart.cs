@@ -13,7 +13,7 @@ namespace Quantaflare.Data
         public int chartID {  get; set; }
         public string chartTitle {  get; set; }=string.Empty;
         /// <summary>
-        public MudBlazor.ChartType chartType { get; set; }
+        public QChartType chartType { get; set; }
 
         public string chartDataStreamJson { get; set; } = string.Empty;
         /// </summary>

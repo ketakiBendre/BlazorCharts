@@ -341,7 +341,7 @@
         {
             QFChart cData = new QFChart();
             cData.chartTitle = ChartTitle;
-          
+            cData.chartType = QChartType.RawData;
             foreach (var timeChart in timeChartList)
             {
                 cData.chartDataStreamList.Add(timeChart);
