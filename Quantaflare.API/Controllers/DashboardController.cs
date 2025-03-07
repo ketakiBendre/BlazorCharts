@@ -42,22 +42,18 @@ namespace Quantaflare.API.Controllers
         
         [HttpGet]
         [Route("getDashboard")]
-
-        public async Task<IActionResult> getDashboard(int inputId)
-        {
-            var streams = await getDashboardId(inputId);
-            return Ok(streams);
-        }
-
-        private async Task<IEnumerable<Dashboard>> getDashboardId(int inputId)
+        public async Task<IEnumerable<Dashboard>> getDashboard(int clusterId)
         {
             using (IDbConnection db = new NpgsqlConnection(_connectionString))
             {
                 db.Open();
-                var result = await db.QueryAsync<Dashboard>("SELECT * FROM public.getdashboard(@inputId)", new { inputId });
-                return result;
+                var dashQuery = @"SELECT * FROM dashboard WHERE clusterid = @clusterId ORDER BY dashname ASC";
+                var dashList = await db.QueryAsync<Dashboard>(dashQuery, new { clusterId });
+
+                return dashList;
             }
         }
+
 
         [HttpGet]
         [Route("GetDashboardName")]

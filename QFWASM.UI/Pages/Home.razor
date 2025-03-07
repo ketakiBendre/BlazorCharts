@@ -108,7 +108,7 @@
         var cluster = clusters.FirstOrDefault(e => e.ClusterName == SelectedCluster);
         if (cluster != null)
         {
-            var url = $"api/Dashboard/getDashboard?inputId={cluster.ClusterId}";
+            var url = $"api/Dashboard/getDashboard?clusterId={cluster.ClusterId}";
             var dBoard = await Http.GetFromJsonAsync<Dashboard[]>(url);
             if (dBoard != null)
             {
