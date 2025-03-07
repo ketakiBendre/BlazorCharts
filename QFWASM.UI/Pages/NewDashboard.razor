@@ -242,7 +242,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        
+
         if (firstRender || allChartList.Count > 0)
         {
             await JSRuntime.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
@@ -251,20 +251,20 @@
                 if (chart.chartType == QChartType.Map && chart.locationDetailsList.Any())
                 {
 
-                        if (selectedOption)
-                        {
-                            await ShowMap(chart.locationDetailsList.Last());  // For current location
-                        }
-                        else
-                        {
+                    if (selectedOption)
+                    {
+                        await ShowMap(chart.locationDetailsList.Last());  // For current location
+                    }
+                    else
+                    {
                         await ShowMapRoute(chart.locationDetailsList.Last());  // For whole route
-                        }
+                    }
                 }
 
             }
         }
     }
-    
+
 
     [JSInvokable]
     public void OnListReordered(List<string> updatedIds)
@@ -504,7 +504,7 @@
                                     var rawData = await myChartService.GetRawDataInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
                                     rawData.chartTitle = dashboard_chart.chartTitle;
                                     rawData.chartId = dashboard_chart.chartID;
-                                    rawData.chartType = QChartType.RawData;
+                                    rawData.chartType = dashboard_chart.chartType;
                                     dynamicColumns = rawData.rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
                                     allChartList.Add(rawData);
                                     break;
@@ -632,7 +632,7 @@
         }
     }
 
-    
+
 
     private async Task RawDataPaper()
     {
@@ -654,6 +654,7 @@
             var rawData = await myChartService.GetRawDataInfo(ReturnedDataChart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
             rawData.chartTitle = ReturnedDataChart.chartTitle;
             rawData.chartId = ReturnedDataChart.chartID;
+            rawData.chartType = ReturnedDataChart.chartType;
             dynamicColumns = rawData.rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
             allChartList.Add(rawData);
 

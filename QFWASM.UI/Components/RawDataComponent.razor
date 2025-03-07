@@ -73,10 +73,10 @@
                                 </MudCardActions>
                             </MudCard>
 
-                            @if (timeChartList.Count > 0)
+                            @if (rawChartList.Count > 0)
                             {
                                 <div class="mt-6;">
-                                    <MudDataGrid Items="@timeChartList.Take(4)" Class="custom-width">
+                                    <MudDataGrid Items="@rawChartList.Take(4)" Class="custom-width">
                                         <Columns>
                                             <PropertyColumn Property="x => x.stream" Title="Stream" />
                                             <PropertyColumn Property="x => x.field" Title="Field" />
@@ -164,10 +164,10 @@
                                 </MudCardActions>
                             </MudCard>
 
-                            @if (timeChartList.Count > 0)
+                            @if (rawChartList.Count > 0)
                             {
                                 <div class="mt-6;">
-                                    <MudDataGrid Items="@timeChartList.Take(4)" Class="custom-width">
+                                    <MudDataGrid Items="@rawChartList.Take(4)" Class="custom-width">
                                         <Columns>
                                             <PropertyColumn Property="x => x.stream" Title="Stream" />
                                             <PropertyColumn Property="x => x.field" Title="Field" />
@@ -251,7 +251,7 @@
     private string selectedStream;
     private string selectedField;
     private string selectedAgr;
-    private List<ChartDataStream> timeChartList = new List<ChartDataStream>();
+    private List<ChartDataStream> rawChartList = new List<ChartDataStream>();
 
     private List<EnergyStream> loadStreamField = new List<EnergyStream>();
     private List<Streams> loadStreams = new List<Streams>();
@@ -293,18 +293,18 @@
 
     private async Task AddItem()
     {
-        ChartDataStream timeChart = new ChartDataStream();
-        timeChart.stream = selectedStream;
-        timeChart.field = selectedField;
+        ChartDataStream rawDataChart = new ChartDataStream();
+        rawDataChart.stream = selectedStream;
+        rawDataChart.field = selectedField;
         startTime = DateTimeOffset.Now.AddDays(-5).Date;
         endTime = DateTimeOffset.Now;
-        if (!timeChartList.Any(p => p.stream == timeChart.stream && p.field == timeChart.field))
+        if (!rawChartList.Any(p => p.stream == rawDataChart.stream && p.field == rawDataChart.field))
         {
-            timeChartList.Add(timeChart);
+            rawChartList.Add(rawDataChart);
 
 
             /*Display chart*/
-            chartSeriesData = await myChartService.GetRawDataInfo(timeChartList, startTime, endTime);
+            chartSeriesData = await myChartService.GetRawDataInfo(rawChartList, startTime, endTime);
             dynamicColumns = chartSeriesData.rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
             showComponent = true;
 
@@ -320,7 +320,7 @@
 
     private async Task DeleteStream(ChartDataStream DeleteEStream, List<RawData> rawDataList)
     {
-        timeChartList.Remove(DeleteEStream);
+        rawChartList.Remove(DeleteEStream);
         dynamicColumns.Remove(DeleteEStream.field.ToLower());
         /*Display chart*/
         rawDataList = myChartService.RemoveRawData(DeleteEStream, rawDataList);
@@ -337,14 +337,14 @@
         {
             myChartService.ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight, Severity.Error);
         }
-        else if (timeChartList.Any())
+        else if (rawChartList.Any())
         {
             QFChart cData = new QFChart();
             cData.chartTitle = ChartTitle;
             cData.chartType = QChartType.RawData;
-            foreach (var timeChart in timeChartList)
+            foreach (var rawChart in rawChartList)
             {
-                cData.chartDataStreamList.Add(timeChart);
+                cData.chartDataStreamList.Add(rawChart);
             }
 
             var response = await Http.PostAsJsonAsync("api/Stream/PostQFChart", cData);
