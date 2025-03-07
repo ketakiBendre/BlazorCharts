@@ -841,7 +841,7 @@
         }
 
         await Http.PostAsJsonAsync("api/Dashboard/UpdateDashboard", ds);
-        Navigation.NavigateTo("/managedash");
+        Navigation.NavigateTo($"/managedash?clusterid={clusterid}");
     }
   
 }

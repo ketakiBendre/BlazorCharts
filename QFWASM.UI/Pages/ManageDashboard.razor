@@ -1,7 +1,7 @@
 ﻿@page "/managedash"
 @using Quantaflare.Data
 @inject HttpClient Http
-@inject NavigationManager navManager;
+@inject NavigationManager navManager
 
 <PageTitle>ManageDashboard</PageTitle>
 
@@ -14,12 +14,12 @@
             <MudPaper Class="d-flex flex-column justify-space-between pa-4 mt-5 mb-0" Elevation="0">
 
                 <MudGrid>
-          
+
                     <MudItem xs="12" sm="12" md="12">
-                            <MudStack Row = "false">
-                                <MudText Typo="Typo.h5">Manage Dashboards </MudText>
-                                <MudText Typo="Typo.subtitle1">Create custom dashboards for different clusters </MudText>
-                            </MudStack>
+                        <MudStack Row = "false">
+                            <MudText Typo="Typo.h5">Manage Dashboards </MudText>
+                            <MudText Typo="Typo.subtitle1">Create custom dashboards for different clusters </MudText>
+                        </MudStack>
                     </MudItem>
 
                     <MudItem xs="12" sm="4" md="4">
@@ -39,44 +39,44 @@
                 {
                     <MudPaper Elevation="0" class="p-0 mt-4">
                         <!--new dashboard Grid-->
-                    <MudGrid>
-                        <MudItem xs="8" sm="8" md="8">
+                        <MudGrid>
+                            <MudItem xs="8" sm="8" md="8">
                                 <MudText Style="font-weight: bold;">Current Dashboards</MudText>
-                        </MudItem>
-                            <MudItem class="d-flex justify-content-end">
-                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard" OnClick="newDash">New Dashboard</MudButton>
                             </MudItem>
-                    </MudGrid>
+                            <MudItem class="d-flex justify-content-end">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="new-dashboard" OnClick="newDash">New Dashboard</MudButton>
+                            </MudItem>
+                        </MudGrid>
 
                         <!-- Data Grid to display Dashboards -->
-                    <div class="mt-6;">
-                        <MudDataGrid T="Dashboard" Items="@dashB" Class="custom-width">
-                        <Columns>
-                            <PropertyColumn Property="x => x.dashName" Title="Dashboard Name"/>
-                            <PropertyColumn Property="x => x.createdOn" Title="Created On" />
-                                <TemplateColumn CellClass="d-flex justify-end">
-                                    <CellTemplate>
-                                        <MudStack Row>
+                        <div class="mt-6;">
+                            <MudDataGrid T="Dashboard" Items="@dashB" Class="custom-width">
+                                <Columns>
+                                    <PropertyColumn Property="x => x.dashName" Title="Dashboard Name"/>
+                                    <PropertyColumn Property="x => x.createdOn" Title="Created On" />
+                                    <TemplateColumn CellClass="d-flex justify-end">
+                                        <CellTemplate>
+                                            <MudStack Row>
                                                 <MudButton EndIcon="@Icons.Material.Filled.Edit"
-                                                           Variant="@Variant.Filled"
-                                                           Color="@Color.Primary"
-                                                           OnClick="@(() => editDash(context.Item.dashName))">
+                                                Variant="@Variant.Filled"
+                                                Color="@Color.Primary"
+                                                OnClick="@(() => editDash(context.Item.dashName))">
                                                     Edit
                                                 </MudButton>
-                                        </MudStack>
-                                    </CellTemplate>
-                                </TemplateColumn>
-                        </Columns>
-                         <PagerContent>
-                            <MudDataGridPager T="Dashboard" />
-                        </PagerContent>
-                    </MudDataGrid>
-                    </div>
-                </MudPaper>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                                <PagerContent>
+                                    <MudDataGridPager T="Dashboard" />
+                                </PagerContent>
+                            </MudDataGrid>
+                        </div>
+                    </MudPaper>
                 }
             </MudPaper>
         </MudItem>
-        
+
     </MudGrid>
 
 </MudContainer> 
@@ -98,8 +98,21 @@
         var cl = await Http.GetFromJsonAsync<Cluster[]>("api/Dashboard/getCluster");
         if (cl!=null)
         {
+            var uri = navManager.ToAbsoluteUri(navManager.Uri);
+
+            // Parse the query parameters
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            if (query != null && query["clusterid"] != null)
+            {
+                clusterid = int.Parse(query["clusterid"]);
+            }
+            else
+            {
+                clusterid = cl.FirstOrDefault().ClusterId;
+            }
             clusters = cl;
-            SelectedCluster = "Cluster1";
+            SelectedCluster = "Cluster"+clusterid;
+            
             await FetchDashboardsForCluster();
         }
     }
@@ -107,6 +120,11 @@
     private async Task OnSelectingCluster(string name)
     {
         SelectedCluster = name;
+        var cluster = clusters.FirstOrDefault(e => e.ClusterName == SelectedCluster);
+        if (cluster != null)
+        {
+            clusterid = cluster.ClusterId;
+        }
         await FetchDashboardsForCluster();
     }
 

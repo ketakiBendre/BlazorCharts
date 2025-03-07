@@ -72,21 +72,13 @@ namespace Quantaflare.API.Controllers
             {
                 // Find the latest "New Dashboard %" for the given cluster
                 var maxExistingDashboardQuery = @"
-            SELECT dashname FROM dashboard 
-            WHERE clusterid = @clusterId AND dashname LIKE 'New Dashboard%' 
-            ORDER BY dashname DESC 
-            LIMIT 1";
+                     SELECT max(cast(('0' || regexp_replace(dashname, '\D', '', 'g')) as integer)) FROM dashboard 
+                    WHERE clusterid = @clusterId AND dashname LIKE 'New Dashboard %'";
 
-                var latestDashName = await connection.ExecuteScalarAsync<string>(maxExistingDashboardQuery, new { ClusterId = clusterId });
+                var LatestCount = await connection.ExecuteScalarAsync<int?>(maxExistingDashboardQuery, new { ClusterId = clusterId });
 
-                if (!string.IsNullOrEmpty(latestDashName) && latestDashName.StartsWith("New Dashboard "))
-                {
-                    var parts = latestDashName.Split(' ');
-                    if (parts.Length == 3 && int.TryParse(parts[2], out int number))
-                    {
-                        return $"New Dashboard {number + 1}";
-                    }
-                }
+                if (LatestCount.HasValue && LatestCount.Value > 0)
+                    return $"New Dashboard {LatestCount.Value + 1}";
 
                 return "New Dashboard 1";  // Default first name if no existing dashboards
             }
