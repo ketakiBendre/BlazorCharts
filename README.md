@@ -1,7 +1,9 @@
 # Blazor Charts Dashboard
 
 **About the project:**  
+This project focuses on creating and managing charts using MudBlazor. The charts are highly customizable, allowing users to drag, drop, and resize them effortlessly within the dashboard. Implementing this functionality without JavaScript was challenging, but with MudBlazor, it was achieved using simple and efficient code.
 
+Such dashboards can serve various purposes, including analyzing battery data and other analytical insights. Using these charts in Business and Finances, Hospital Data etc. C# with MudBlazor made it easy to use. Users can directly use this Nuget Packge and customize as per the requirements.
    
    
 **Built with:**
@@ -31,12 +33,11 @@
      ```
 
 ### Usage:
-```
+
 This is a sample dashboard built using .NET and MudBlazor for analyzing battery and energy management in EVs.  
 It serves as an analytical tool that simulates battery energy performance, eliminating the need for physical batteries.  
 The dashboard includes various interactive charts for data visualization and maps that display battery locations,
 enabling efficient monitoring and analysis.
-```
     
     - Here are some Sample images to check for Dashboard   
     
