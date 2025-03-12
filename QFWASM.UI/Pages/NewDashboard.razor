@@ -12,7 +12,6 @@
 @using System.Text.Json.Serialization
 @using System.Linq
 
-
 <PageTitle>New Unit Dashboard</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.False">
@@ -96,8 +95,17 @@
                             var chartBreak = chartData[chartId];
 
                             <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId">
-                                <MudPaper Class="p-2" Style="width: 100%;">
-                                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
+                                <MudPaper Class="p-2 d-flex flex-column" Style="width: 100%;">
+                                    <div class="d-flex justify-content-between align-items-center w-100">
+
+                                        <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                        Color="Color.Error"
+                                        Class="delete-button"
+                                        Style="margin-top: -2px;"
+                                        OnClick="() => DeleteChart(clusterid, dashboardName,displayChart.chartId)" />
+                                        
+                                    </div>
                                     @if (@displayChart.chartType == QChartType.TimeSeries)
                                     {
                                         <MudTimeSeriesChart ChartType="@displayChart.MudChartType"
@@ -186,6 +194,8 @@
 
     [Parameter]
     public string Mode { get; set; }
+    [Parameter]
+    public string dashboardName { get; set; } = string.Empty;
 
     public string TextValue { get; set; } = string.Empty;
     public bool Dense_Radio { get; set; } = true;
@@ -217,6 +227,8 @@
     public bool updatebrk = false;
     public List<string> dynamicColumns;
 
+    
+
     protected async override Task OnInitializedAsync()
     {
         // Get the URI of the current request
@@ -234,7 +246,7 @@
         }
         else if (Mode == "edit")
         {
-            var dashboardName = query["dashboardName"];
+            dashboardName = query["dashboardName"];
             ds = await editDashboard(clusterid, dashboardName);
         }
 
@@ -379,6 +391,34 @@
 
 
         StateHasChanged();
+    }
+
+    private async Task DeleteChart(string clusterId, string dashName, int chartId)
+    {
+        var dialog = DialogService.Show<Components.ConfirmDeleteDialog>("Confirm Delete");
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            var response = await Http.DeleteAsync($"api/Dashboard/DeleteChart/{clusterId}/{dashName}/{chartId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                myChartService.ShowAlert("Chart deleted successfully!", Defaults.Classes.Position.BottomRight, Severity.Success);
+
+                // Remove the deleted chart from UI
+                allChartList.RemoveAll(chart => chart.chartId == chartId);
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                myChartService.ShowAlert($"Failed to delete chart: {errorMessage}", Defaults.Classes.Position.BottomRight, Severity.Error);
+            }
+        }
+        else
+        {
+            return;
+        }
     }
 
 

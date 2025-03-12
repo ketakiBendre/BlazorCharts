@@ -1,0 +1,22 @@
+﻿
+
+<MudDialog>
+    <TitleContent>
+        <strong>Delete Chart Confirmation</strong>
+    </TitleContent>
+    <DialogContent>
+          <MudText>Are you sure you want to delete this chart?</MudText>
+    </DialogContent>
+    <DialogActions>
+         <MudButton OnClick="Cancel" Color="Color.Secondary">No</MudButton>
+         <MudButton OnClick="Confirm" Color="Color.Error">Yes</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    public void Cancel() => MudDialog.Cancel();  // Close dialog without action
+
+    public void Confirm() => MudDialog.Close(DialogResult.Ok(true));  // Confirm action and close
+}

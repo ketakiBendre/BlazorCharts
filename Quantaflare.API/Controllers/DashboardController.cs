@@ -7,6 +7,9 @@ using System.Data;
 using System.Data.Common;
 using static MudBlazor.CategoryTypes;
 using System.Text.Json;
+using Newtonsoft.Json.Linq;
+using System.Text.Json.Serialization;
+
 
 namespace Quantaflare.API.Controllers
 {
@@ -245,6 +248,61 @@ namespace Quantaflare.API.Controllers
             }
         }
 
-       
+        [HttpDelete]
+        [Route("DeleteChart/{clusterId}/{dashName}/{chartId}")]
+        public async Task<IActionResult> DeleteChart(int clusterId, string dashName, int chartId)
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    using (var transaction = await connection.BeginTransactionAsync())
+                    {
+                        
+
+                        // Step 1: Delete the chart from QFChart
+                        string deleteChartQuery = "DELETE FROM QFChart WHERE chartid = @chartId;";
+                        int rowsAffected = await connection.ExecuteAsync(deleteChartQuery, new { chartId }, transaction);
+
+                        if (rowsAffected == 0)
+                        {
+                            await transaction.RollbackAsync();
+                            return NotFound(new { message = "Chart not found in QFChart" });
+                        }
+
+                        // Step 2: Remove the chart ID from chartinfo JSON in Dashboard
+                        string updateDashboardQuery = @"
+                                                        UPDATE Dashboard 
+                                        SET chartinfo = (
+                                            SELECT json_agg(elem) -- Convert JSONB array back to JSON format
+                                            FROM jsonb_array_elements(chartinfo::jsonb) elem
+                                            WHERE NOT (elem ? @chartId::text) -- Remove the object containing chartId
+                                        )::json -- Ensure the result is cast back to JSON
+                                        WHERE clusterid = @clusterId 
+                                        AND dashname = @dashName 
+                                        AND chartinfo::text LIKE '%' || @chartId || '%';";
+
+
+                        int updatedRows = await connection.ExecuteAsync(updateDashboardQuery,
+                            new { chartId, clusterId, dashName });
+
+                        if (updatedRows == 0)
+                        {
+                            await transaction.RollbackAsync();
+                            return NotFound(new { message = "Chart ID not found in Dashboard's chartinfo" });
+                        }
+
+                        await transaction.CommitAsync();
+                        return Ok(new { message = "Chart deleted successfully" });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new { message = "Error deleting chart", error = ex.Message });
+                }
+            }
+        }
+
     }
 }
