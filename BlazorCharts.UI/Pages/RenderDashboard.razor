@@ -1,0 +1,45 @@
+﻿@page "/renderdash"
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@using BlazorCharts.Data
+@inject Services.MyChartService myChartService
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+
+
+<MudItem xs="12" sm="12" md="12" Class="mt-10">
+    @if (clusterid != string.Empty)
+    {
+        
+        <BlazorCharts.UI.Components.DashRenderer
+             ClusterId_p=@clusterid
+             DashboardName_p=@dashboardName
+             OrgId_p="0"
+             ProductId_p="0"
+             UnitId_p="0">
+        </BlazorCharts.UI.Components.DashRenderer>
+    }
+</MudItem>
+
+
+@code {
+
+    public string clusterid { get; set; }
+    public string dashboardName { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        // Get the URI of the current request
+         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        // // Parse the query parameters
+         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+         clusterid = query["clusterid"];
+         dashboardName = query["dashboardName"];
+        
+    }
+
+
+
+}
