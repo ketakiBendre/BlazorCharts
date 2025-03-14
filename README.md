@@ -4,10 +4,12 @@
 This project focuses on creating and managing charts using MudBlazor. The charts are highly customizable, allowing users to drag, drop, and resize them effortlessly within the dashboard. Implementing this functionality without JavaScript was challenging, but with MudBlazor, it was achieved using simple and efficient code.
 
 Such dashboards can serve various purposes, including analyzing battery data and other analytical insights. Using these charts in Business and Finances, Hospital Data etc. C# with MudBlazor made it easy to use. Users can directly use this Nuget Packge and customize as per the requirements.
-   
+
+**Demo:**
+
+https://github.com/user-attachments/assets/719a21e7-e265-45bb-8e91-dbbef43eca8b
    
 **Built with:**
-
  
    - [MudBlazor 8.3.0](https://www.mudblazor.com/)
    - [.net 8.0](https://dotnet.microsoft.com/en-us/download/dotnet-framework)
