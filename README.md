@@ -26,13 +26,18 @@ https://github.com/user-attachments/assets/719a21e7-e265-45bb-8e91-dbbef43eca8b
    - MudBlazor 8.3.0
    - System.Text.Json
    - Dapper
-   - Get the Mapbox access token and copy in Mapbox.js file
+   - Get the Mapbox access token and copy in `BlazorCharts.UI\wwwroot\appsettings.json` file
+   - Get DB Connection string and copy in `BlazorCharts.API\appsettings.json
      
 ### **Installation:**
    - Clone Repository
-     ```
-     git clone https://github.com/ketakiBendre/QuantaflareUI
-     ```
+     
+     git clone [BlazorCharts](https://github.com/ketakiBendre/BlazorCharts)
+
+   - Copy below DB schema in postgreSQL:
+     
+     [BlazorChartsDB.zip](https://github.com/user-attachments/files/19241428/BlazorChartsDB.zip)
+
 
 ### Usage:
 
@@ -40,13 +45,3 @@ This is a sample dashboard built using .NET and MudBlazor for analyzing battery 
 It serves as an analytical tool that simulates battery energy performance, eliminating the need for physical batteries.  
 The dashboard includes various interactive charts for data visualization and maps that display battery locations,
 enabling efficient monitoring and analysis.
-    
-    - Here are some Sample images to check for Dashboard   
-    
-    1. Manage Dashboard, where you can Create New Dashboard or edit existing Dashboards.
-       (MAnageDashboard.png)
-<img width="500" alt="ManageDashboard" src="https://github.com/user-attachments/assets/d9ac50a8-12d9-439d-8c19-fca05d46c81d" />  
-
-    2. Creating NewDashboard, Here we can create New Dashbaords and add different types of available charts or map
-       
-<img width="500" alt="Dashboard with charts" src="https://github.com/user-attachments/assets/ee5f07f1-1ddb-40e4-ae50-3e2096837c99" />
