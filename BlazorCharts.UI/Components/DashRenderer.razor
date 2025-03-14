@@ -1,0 +1,436 @@
+﻿@inherits MudComponentBase
+
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@using BlazorCharts.Data
+@inject Services.MyChartService myChartService
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+@using System.Text
+@inject IJSRuntime JSRuntime
+@using System.Text.Json
+@using System.Net.Http.Json
+@using System.Text.Json.Serialization
+
+
+@* page common injects*@
+@inject NavigationManager _navigationManager
+@inject AppConfig Config
+
+<MudElement @attributes="@UserAttributes"  Style="@Style">
+
+    <MudGrid>
+        <!--outermost grid -->
+
+        <MudItem md="12" sm="12" xs="12">
+            <!--main page left column-->
+            <MudPaper Class="pa-2" Elevation="0">
+                <MudGrid>
+                    <!--2nd Row for the Data grid-->
+                    @if (IsProcessing)
+                    {
+                        <MudItem xs="12" sm="12" md="12">
+                            <MudText>Loading....</MudText>
+                        </MudItem>
+                    }
+                    else if (_error != null)
+                    {
+                        <MudItem xs="12" sm="12" md="12">
+                            @* <ErrorDisplay Error="_error" /> *@
+                            There is an error loading.....
+                        </MudItem>
+                    }
+                    else if (true)
+                    {
+                        <MudItem xs="12" sm="12" md="12">
+                            <h1>Welcome to @dashboardName in Clusterid @clusterid</h1>
+                            
+                        </MudItem>
+                        @if (showChart)
+                        {
+                            <MudGrid>
+                                <MudItem xs="12">
+                                    <MudGrid Id="sortable-grid">
+                                        @for (int i = 0; i < allChartList.Count; i++)
+                                        {
+                                            int localindex = i;
+                                            var displayChart = allChartList[i];
+                                            var chartData = ds.QFChartList[i];
+                                            var chartId = chartData.Keys.First();
+                                            var chartBreak = chartData[chartId];
+
+                                            <MudItem xs="@chartBreak" data-item-id="@displayChart.chartId">
+                                                <MudPaper Class="p-2">
+                                                    <MudText Typo="Typo.h6" Style="text-decoration: underline;">@displayChart.chartTitle</MudText>
+                                                    @if (@displayChart.chartType == QChartType.TimeSeries)
+                                                    {
+                                                        <MudTimeSeriesChart ChartType="@displayChart.MudChartType"
+                                                                            ChartSeries="@displayChart.tSeries"
+                                                                            @bind-SelectedIndex="@displayChart.Index"
+                                                                            XAxisLabels="@displayChart.xAxisLabels"
+                                                                            Width="100%"
+                                                                            Height="350px"
+                                                                            ChartOptions="@displayChart.options" CanHideSeries TimeLabelSpacing="TimeSpan.FromMinutes(5)" />
+                                                    }
+                                                    else if (@displayChart.chartType == QChartType.RawData)
+                                                    {
+                                                        var dynamicColumns = displayChart.rawDataList.SelectMany(data => data.Fields.Keys).Distinct().ToList();
+                                                        <MudStack Spacing="1">
+                                                            <MudIconButton Variant="Variant.Filled" Icon="@Icons.Material.Filled.FileDownload" Color="Color.Default" Style="width: 30px; height: 20px;" OnClick="(() => DownloadCsv(displayChart.rawDataList, dynamicColumns))" />
+                                                            <MudDataGrid Items="@displayChart.rawDataList" Hover="true" Bordered="true" Striped="true" Dense="true" SortMode="SortMode.Single" Virtualize="true" FixedHeader="true" Style="max-width: 100%;">
+                                                                <Columns>
+                                                                    <PropertyColumn Property="x => x.Timestamp" Title="Time" />
+                                                                    @foreach (var column in dynamicColumns)
+                                                                    {
+                                                                        <PropertyColumn Property="x => x.Fields[column]" Title="@column" Sortable="false" />
+                                                                    }
+                                                                </Columns>
+                                                            </MudDataGrid>
+                                                        </MudStack>
+                                                    }
+                                                    else if (@displayChart.chartType == QChartType.Map)
+                                                    {
+                                                        <MudItem xs="6" sm="12" md="12" Class="mb-4">
+                                                            <MudRadioGroup @bind-Value="selectedOption" Label="Choose Option" Color="Primary">
+                                                                <MudRadio Value="true" Color="Color.Primary" Dense="true">Current Location</MudRadio>
+                                                                <MudRadio Value="false" Color="Color.Secondary" Dense="false">Full Route</MudRadio>
+                                                            </MudRadioGroup>
+                                                        </MudItem>
+                                                        <div id="map" style="width: 100%; height: 500px;"></div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudChart ChartType="@displayChart.MudChartType"
+                                                                  ChartSeries="@displayChart.series"
+                                                                  @bind-SelectedIndex="@displayChart.Index"
+                                                                  XAxisLabels="@displayChart.xAxisLabels"
+                                                                  Width="100%"
+                                                                  Height="350px"
+                                                                  ChartOptions="@displayChart.options" />
+                                                    }
+                                                    @if (@displayChart.chartType != QChartType.Map && @displayChart.chartType != QChartType.RawData)
+                                                    {
+                                                        <MudGrid>
+                                                            <MudItem xs="6">
+                                                                <MudText Typo="Typo.body1" Class="py-3">Selected: @(displayChart.Index < 0 ? "None" : displayChart.series[@displayChart.Index].Name)</MudText>
+                                                            </MudItem>
+                                                            <MudItem xs="6">
+                                                                <MudSlider @bind-Value="@displayChart.options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @displayChart.options.LineStrokeWidth.ToString()</MudSlider>
+                                                            </MudItem>
+                                                        </MudGrid>
+                                                    }
+                                                </MudPaper>
+                                            </MudItem>
+                                        }
+                                    </MudGrid>
+                                </MudItem>
+                            </MudGrid>
+                        }
+                    }
+             
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+    </MudGrid>
+
+    <style>
+        .BlurBKG {
+            backdrop-filter: blur(10px);
+        }
+
+    </style>
+
+</MudElement>
+
+@code
+{
+
+    // private string Classname =>
+    // new CssBuilder()
+    // .AddClass(Class)
+    // .Build();
+
+    //parameter set by parent compo
+
+    //what is the cluster
+    [Parameter]
+    public string  ClusterId_p { get; set; } //change this to int later
+    [Parameter]
+    public int OrgId_p { get; set; }
+    [Parameter]
+    public int UnitId_p { get; set; }
+    [Parameter]
+    public int ProductId_p { get; set; }
+    [Parameter]
+    public int DashboardId_p { get; set; }
+    [Parameter]
+    public string DashboardName_p { get; set; }  //to be removed 
+
+
+
+    public bool IsProcessing { get; set; } = false; //for showing the wait
+    public string _error { get; set; }
+
+
+    //on page load
+    public string clusterid = string.Empty;
+    public string dashboardName = string.Empty;
+    public bool Dense_Radio { get; set; } = true;
+    private readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true, BackdropClick = false };
+
+    private bool showChart = false;
+    private bool updatebrk = false;
+    private string[] xAxisLabels = new string[0];
+    private List<MudBlazor.ChartSeries> series = new List<MudBlazor.ChartSeries>();
+    private QFChart ReturnedLineChart = new QFChart();
+    private Dashboard ds;
+    private List<ChartSeriesData> allChartList = new List<ChartSeriesData>();
+    public bool selectedOption { get; set; } = true;
+    private bool previousSelectedOption;
+    public string accessToken { get; set; } = string.Empty;
+    
+    protected async override Task OnInitializedAsync()
+    {
+        // Get the URI of the current request
+        //var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        clusterid = ClusterId_p.ToString(); 
+        dashboardName = DashboardName_p; 
+        updatebrk = false;
+        accessToken = Config.Mapbox.AccessToken;
+        ds = await getDashboard(clusterid, dashboardName);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender || allChartList.Count > 0)
+        {
+            foreach (var chart in allChartList)
+            {
+                if (chart.chartType == QChartType.Map && chart.locationDetailsList.Any())
+                {
+
+                    if (selectedOption)
+                    {
+                        await ShowMap(chart.locationDetailsList.Last());  // For current location
+                    }
+                    else
+                    {
+                        await ShowMapRoute(chart.locationDetailsList.Last());  // For whole route
+                    }
+
+                }
+            }
+        }
+    }
+
+    private async Task ShowMap(LocationDetails location)
+    {
+        if (location.Latitude != 0 &&
+            location.Longitude != 0 &&
+            location.ZoomLevel != 0)
+        {
+            await JSRuntime.InvokeVoidAsync("initializeMapbox", location, accessToken);
+        }
+        else
+        {
+            Console.WriteLine($"Invalid input: {location.Latitude}, {location.Longitude}, {location.ZoomLevel}");
+        }
+    }
+
+    private async Task ShowMapRoute(LocationDetails loc)
+    {
+
+
+        if (loc != null)
+        {
+            List<LocationDetails> locationDetailsList = new List<LocationDetails>();
+            Random random = new Random();
+            // Generate 5 random locations
+            for (int i = 0; i < 5; i++)
+            {
+                locationDetailsList.Add(new LocationDetails
+                    {
+                        Latitude = loc.Latitude + (random.NextDouble() * 0.1) - 0.05,  // Small variation
+                        Longitude = loc.Longitude + (random.NextDouble() * 0.1) - 0.05
+                    });
+            }
+            var json = JsonSerializer.Serialize(locationDetailsList);
+            await JSRuntime.InvokeVoidAsync("initializeMapboxWithRoute", JsonDocument.Parse(json).RootElement, accessToken);
+
+        }
+        else
+        {
+            Console.WriteLine("No locations to plot.");
+        }
+    }
+    void UpdateBreaks(Guid dashboardId, int chartIndex, int changeAmount)
+    {
+        if (ds == null || ds.dashid != dashboardId) return;
+
+        // Ensure the chartIndex is valid
+        if (chartIndex >= ds.QFChartList.Count) return;
+
+        var chartData = ds.QFChartList[chartIndex];
+
+        // Get the chart ID and update its break value
+        foreach (var chartId in chartData.Keys.ToList()) // Iterate keys
+        {
+            var currentBreak = chartData[chartId];
+            var newBreak = currentBreak + changeAmount;
+
+            // Ensure the break value stays within bounds
+            if (newBreak > 12 || newBreak < 1) return;
+
+            // Update the break value
+            chartData[chartId] = newBreak;
+
+            // Persist the change back to the `QFChartList`
+            ds.QFChartList[chartIndex] = chartData;
+            updatebrk = true;
+            StateHasChanged();
+        }
+    }
+
+    void UpdatePapers(Guid dashboardId, int chartCount)
+    {
+        if (ds == null || !ds.dashid.Equals(dashboardId)) return;
+
+        // Adjust the number of charts in QFChartList
+        while (ds.QFChartList.Count < chartCount)
+        {
+            // Add new chart with default break value of 3
+            ds.QFChartList.Add(new Dictionary<int, int> { { 0, 3 } });
+        }
+
+        while (ds.QFChartList.Count > chartCount)
+        {
+            // Remove excess charts
+            ds.QFChartList.RemoveAt(ds.QFChartList.Count - 1);
+        }
+
+
+        StateHasChanged();
+    }
+
+
+    private async Task<Dashboard> getDashboard(string clusterid, string dashboardName)
+    {
+        DateTimeOffset startTime, endTime;
+        Dashboard oldDash = new Dashboard();
+        var url_dashname = $"api/Dashboard/GetDashboardDetails?clusterid={clusterid}&&dashname={dashboardName}";
+        oldDash = await Http.GetFromJsonAsync<Dashboard>(url_dashname);
+        if (oldDash != null)
+        {
+            Dense_Radio = (oldDash.dashType == "Unit Dashboard") ? true : false;
+            if (oldDash.QFChartList != null)
+            {
+                List<int> chartIdList = new List<int>();
+                foreach (var chart in oldDash.QFChartList)
+                {
+                    foreach (var kvp in chart)
+                    {
+                        chartIdList.Add(kvp.Key);
+
+                    }
+                }
+                var url_QFChart = $"api/Stream/GetQFChart?chartId={string.Join(",", chartIdList)}";
+                try
+                {
+                    var dashboard_qfChartList = await Http.GetFromJsonAsync<QFChart[]>(url_QFChart);
+                    if (dashboard_qfChartList != null)
+                    {
+                        var orderedCharts = chartIdList
+                                             .Select(id => dashboard_qfChartList.FirstOrDefault(chart => chart.chartID == id))
+                                             .Where(chart => chart != null)
+                                             .ToList();
+
+                        foreach (var dashboard_chart in orderedCharts)
+                        {
+
+                            Console.WriteLine($" dashboard charts:{dashboard_chart.chartTitle}");
+                            showChart = true;
+                            startTime = DateTimeOffset.Now.AddDays(-5).Date;
+                            endTime = DateTimeOffset.Now;
+                            switch (dashboard_chart.chartType)
+                            {
+                                case QChartType.Line:
+                                    var lineSeriesData = await myChartService.GetLineChartInfo(dashboard_chart.chartDataStreamList.Cast<LineChartData>().ToList());
+                                    lineSeriesData.chartTitle = dashboard_chart.chartTitle;
+                                    lineSeriesData.chartId = dashboard_chart.chartID;
+                                    lineSeriesData.chartType = dashboard_chart.chartType;
+
+                                    allChartList.Add(lineSeriesData);
+                                    break;
+
+                                case QChartType.TimeSeries:
+                                    var timeSeriesData = await myChartService.GetTimeChartInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+                                    timeSeriesData.chartTitle = dashboard_chart.chartTitle;
+                                    timeSeriesData.chartId = dashboard_chart.chartID;
+                                    timeSeriesData.chartType = dashboard_chart.chartType;
+
+                                    allChartList.Add(timeSeriesData);
+                                    break;
+                                case QChartType.Map:
+                                    var mapDataList = await myChartService.GetMapDataInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+                                    mapDataList.chartTitle = dashboard_chart.chartTitle;
+                                    mapDataList.chartId = dashboard_chart.chartID;
+                                    mapDataList.chartType = QChartType.Map;
+                                    allChartList.Add(mapDataList);
+                                    break;
+                                default:
+                                    var rawData = await myChartService.GetRawDataInfo(dashboard_chart.chartDataStreamList.Cast<ChartDataStream>().ToList(), startTime, endTime);
+                                    rawData.chartTitle = dashboard_chart.chartTitle;
+                                    rawData.chartId = dashboard_chart.chartID;
+                                    rawData.chartType = QChartType.RawData;
+                                    allChartList.Add(rawData);
+                                    break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    myChartService.ShowAlert("No Data to display check other Dashboard !!", Defaults.Classes.Position.BottomRight, Severity.Error);
+                }
+            }
+        }
+        return oldDash;
+    }
+    private async Task DownloadFile(string content, string fileName)
+    {
+        await JSRuntime.InvokeVoidAsync("downloadFile", content, fileName);
+    }
+
+    private async Task DownloadCsv(List<RawData> rawDataList, List<String> dynamicColumns)
+    {
+        var csvContent = GenerateCsv(rawDataList, dynamicColumns);
+        var fileName = "DataGridExport.csv";
+        await DownloadFile(csvContent, fileName);
+    }
+
+    private string GenerateCsv(List<RawData> data, List<String> dynamicColumns)
+    {
+        if (data == null || !data.Any()) return string.Empty;
+
+        var csvBuilder = new StringBuilder();
+        var headers = new List<string> { "Timestamp" }.Concat(dynamicColumns).ToList();
+        csvBuilder.AppendLine(string.Join(",", headers));
+
+        foreach (var rawData in data)
+        {
+            var values = new List<string>
+            {
+                rawData.Timestamp.ToString()
+            };
+            values.AddRange(dynamicColumns.Select(c => rawData.Fields.TryGetValue(c, out var value) ? value?.ToString() : ""));
+            csvBuilder.AppendLine(string.Join(",", values));
+        }
+
+        return csvBuilder.ToString();
+    }
+
+
+
+}

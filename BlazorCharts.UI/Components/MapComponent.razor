@@ -1,0 +1,300 @@
+﻿﻿@using MudBlazor
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject Services.MapboxService MapboxService
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using BlazorCharts.Data
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+@using System.Text
+@inject Services.MyChartService myChartService
+@inject AppConfig config
+
+<MudDialog>
+    <TitleContent>
+        <strong>@Title</strong>
+    </TitleContent>
+    <DialogContent>
+        <MudItem xs="6" sm="12" md="12">
+            <MudText Typo="Typo.h5" Color="Color.Primary">Adding a Map for Battery Location</MudText>
+        </MudItem>
+        <MudItem xs="6" sm="12" md="12">
+            <MudTextField @bind-Value="ChartTitle" Label="Chart Title" Variant="Variant.Outlined" OnBlur="CheckIfTitleExists" Immediate="true"></MudTextField>
+
+        </MudItem>
+        <MudItem xs="6" sm="12" md="12" Class="mb-4">
+            <MudSwitch @bind-Value="searchLoc" Label="Search By Location" />
+        </MudItem>
+        @if (searchLoc)
+        {
+            <MudTextField @bind-Value="SearchQuery" Placeholder="Enter a location" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+            <MudButton Variant="Variant.Filled" OnClick="SearchLocation">Search</MudButton>
+        }
+        else
+        {
+            <MudTextField @bind-Value="Latitude" Placeholder="Enter Latitude" />
+            <MudTextField @bind-Value="Longitude" Placeholder="Enter Longitude" />
+            <MudTextField @bind-Value="ZoomLevel" Placeholder="Enter Zoom Level" />
+            <MudButton Variant="Variant.Filled" OnClick="ShowMap">Show Map</MudButton>
+        }
+        <MudItem xs="6" sm="12" md="12" Class="mb-4">
+            <MudRadioGroup @bind-Value="selectedOption" Label="Choose Option" Color="Primary" Disabled="!isLocationValid">
+                <MudRadio Value="true" Color="Color.Primary" Dense="true">Current Location</MudRadio>
+                <MudRadio Value="false" Color="Color.Secondary" Dense="false">Full Route</MudRadio>
+            </MudRadioGroup>
+        </MudItem>
+            <div id="map" style="width: 100%; height: 500px;" @after="OnMapContainerRendered"></div>
+        
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="Close">Close</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string clusterid { get; set; } = string.Empty;
+
+    public string ChartTitle { get; set; } = string.Empty;
+    private string SearchQuery { get; set; }
+
+    private string Latitude { get; set; } 
+    private string Longitude { get; set; } 
+    private string ZoomLevel { get; set; } = "12"; // Default zoom level
+    private bool searchLoc { get; set; } = false;
+    private List<LocationDetails> locationDetailsList = new List<LocationDetails>();
+    private LocationDetails loc = new LocationDetails();
+    public bool _selectedOption { get; set; } = true;
+    private List<ChartDataStream> mapDataList = new List<ChartDataStream>();
+    private bool isLocationValid = false;
+    private bool IsTitleDuplicate { get; set; } = false;
+
+    public string accessToken = string.Empty;
+    private bool selectedOption
+    {
+        get => _selectedOption;
+        set
+        {
+            if (_selectedOption != value)
+            {
+                _selectedOption = value;
+                OnOptionChanged(_selectedOption);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        accessToken = config.Mapbox.AccessToken;
+    }
+
+    private async Task CheckIfTitleExists()
+    {
+        if (string.IsNullOrWhiteSpace(ChartTitle))
+        {
+            IsTitleDuplicate = false;
+            return;
+        }
+
+        // Simulate API call to check if title exists
+        IsTitleDuplicate = await CheckTitleInDatabase(ChartTitle);
+    }
+
+    private async Task<bool> CheckTitleInDatabase(string title)
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<bool>($"api/GetChartName?title={Uri.EscapeDataString(title)}");
+            return response;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking chart title: {ex.Message}");
+            return false;
+        }
+    }
+
+
+    private async Task OnOptionChanged(bool newValue)
+    {
+        Console.WriteLine($"Selected option changed to: {newValue}");
+        if (newValue)
+        {
+            await ShowMap();
+        }
+        else
+        {
+            await ShowMapRoute();
+        }
+    }
+
+
+
+    private async Task ShowMap()
+    {
+        if (double.TryParse(Latitude, out var lat) &&
+    double.TryParse(Longitude, out var lng) &&
+    double.TryParse(ZoomLevel, out var zoom))
+        {
+            loc.Latitude = lat;
+            loc.Longitude = lng;
+            isLocationValid = true;
+            StateHasChanged();
+            
+            if (_selectedOption) // If Current Location is selected
+            {
+                LocationDetails loc = new LocationDetails { Latitude = lat, Longitude = lng };
+                locationDetailsList.Add(loc);
+                await JSRuntime.InvokeVoidAsync("initializeMapbox", loc,accessToken);
+            }
+            else // If Full Route is selected, call ShowMapRoute instead
+            {
+                await ShowMapRoute();
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Invalid input: {Latitude}, {Longitude}, 12");
+        }
+    }
+
+    private async Task ShowMapRoute()
+    {
+        locationDetailsList.Clear();
+        if ( loc != null)
+        {
+
+            Random random = new Random();
+            // Generate 5 random locations
+            for (int i = 0; i < 5; i++)
+            {
+                locationDetailsList.Add(new LocationDetails
+                                    {
+                                        Latitude = loc.Latitude + (random.NextDouble() * 0.1) - 0.05,  // Small variation
+                                        Longitude = loc.Longitude + (random.NextDouble() * 0.1) - 0.05
+                                    });
+            }
+            var json = JsonSerializer.Serialize(locationDetailsList);
+            await JSRuntime.InvokeVoidAsync("initializeMapboxWithRoute", JsonDocument.Parse(json).RootElement, accessToken);
+
+        }
+        else
+        {
+            Console.WriteLine("No locations to plot.");
+        }
+    }
+
+    private async Task SearchLocation()
+    {
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            var location = await GetCoordinatesFromMapbox(SearchQuery);
+            if (location != null)
+            {
+                Latitude = location.Latitude.ToString();
+                Longitude = location.Longitude.ToString();
+                ShowMap();
+            }
+        }
+    }
+
+    private async Task<LocationDetails> GetCoordinatesFromMapbox(string query)
+    {
+        var url = $"https://api.mapbox.com/geocoding/v5/mapbox.places/{Uri.EscapeDataString(query)}.json?access_token={accessToken}&autocomplete=true&limit=5";
+
+        var response = await Http.GetStringAsync(url);
+        var json = JsonSerializer.Deserialize<MapboxGeocodingResponse>(response);
+
+        var feature = json?.Features?.FirstOrDefault();
+        if (feature != null)
+        {
+            return new LocationDetails
+                {
+                    Latitude = feature.Geometry.Coordinates[1],
+                    Longitude = feature.Geometry.Coordinates[0]
+                };
+        }
+
+        return null;
+    }
+
+    private void Close() => MudDialog.Close();
+
+    private async Task Save()
+    {
+        if (string.IsNullOrEmpty(ChartTitle))
+        {
+            myChartService.ShowAlert("Please Enter Chart Title to Save !!", Defaults.Classes.Position.BottomRight, Severity.Error);
+        }
+        else
+        {
+            //Save data in Streamkeyvalues table first
+            var response = await Http.PostAsJsonAsync("api/Stream/PostLocDetails", locationDetailsList);
+            if (response.IsSuccessStatusCode)
+            {
+                QFChart cData = new QFChart();
+                cData.chartTitle = ChartTitle;
+                cData.chartType = QChartType.Map;
+                cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Lat" });
+                cData.chartDataStreamList.Add(new ChartDataStream { stream = "Location", field = "Long" });
+                var responseQF = await Http.PostAsJsonAsync("api/Stream/PostQFChart", cData);
+                if (responseQF.IsSuccessStatusCode)
+                {
+                    int chartId = await responseQF.Content.ReadFromJsonAsync<int>(); // Read the returned chartId
+                    if (chartId > -1) // Check if a valid chartId was returned
+                    {
+                        cData.chartID = chartId;
+                        MudDialog.Close(DialogResult.Ok(cData));
+                        myChartService.ShowAlert($"Chart saved with ID: {chartId} !!", Defaults.Classes.Position.BottomRight, Severity.Success);
+                    }
+                }
+                else
+                {
+                    // Handle the error response (optional)
+                    var errorMessage = await responseQF.Content.ReadAsStringAsync();
+                    myChartService.ShowAlert($"Error saving chart: {errorMessage}", Defaults.Classes.Position.BottomRight, Severity.Error);
+                }
+                
+            }
+            else
+            {
+                // Handle the error response (optional)
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                myChartService.ShowAlert($"Error saving streamkeyvalues data: {errorMessage}", Defaults.Classes.Position.BottomRight, Severity.Error);
+            }
+
+            
+        }
+    }
+
+
+    
+    public class MapboxGeocodingResponse
+    {
+        [JsonPropertyName("features")]
+        public List<Feature> Features { get; set; }
+    }
+
+    public class Feature
+    {
+        [JsonPropertyName("geometry")]
+        public Geometry Geometry { get; set; }
+
+        [JsonPropertyName("place_name")]
+        public string PlaceName { get; set; }
+    }
+
+    public class Geometry
+    {
+        [JsonPropertyName("coordinates")]
+        public List<double> Coordinates { get; set; }
+    }
+}
